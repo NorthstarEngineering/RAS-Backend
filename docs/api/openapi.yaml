@@ -1,0 +1,939 @@
+openapi: 3.1.0
+info:
+  title: RAS Backend Mobile API
+  version: 1.0.0
+  description: >-
+    Source-derived handoff for the existing Auth, Branch, and Attendance APIs.
+    The API Gateway server is a placeholder and is not deployed. Endpoint status
+    and deployment or verification gaps are stated per operation.
+servers:
+  - url: http://localhost:9001/api/v1
+    description: Local Auth API (direct service access; no API Gateway)
+  - url: https://api-gateway-domain.example/stage/api/v1
+    description: Future API Gateway; pending deployment and path mapping verification
+tags:
+  - name: Auth
+    description: Login, sessions, and account self-service
+  - name: Users
+    description: CEO user administration
+  - name: Branches
+    description: Branch records and operating settings
+  - name: Employees
+    description: Employee records and payment details
+  - name: Attendance
+    description: Check-in/out and lateness deductions
+  - name: Overtime
+    description: Overtime records and approval workflow
+security:
+  - BearerAuth: []
+paths:
+  /health:
+    get:
+      tags: [Auth]
+      operationId: getServiceHealth
+      summary: Service health
+      security: []
+      servers:
+        - url: http://localhost:9001
+          description: Auth API
+        - url: http://localhost:9002
+          description: Branch API
+        - url: http://localhost:9003
+          description: Attendance API
+      x-implementation-status: implemented for each local API; Gateway routing pending
+      responses:
+        '200':
+          description: Service is responding
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Health'}
+              examples:
+                auth: {value: {status: ok, service: auth-api}}
+                branch: {value: {status: ok, service: branch-api}}
+                attendance: {value: {status: ok, service: attendance-api}}
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Log in and create a token session
+      security: []
+      x-implementation-status: implemented and source-verified
+      description: Rate-limited. Login returns a bearer access token and refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LoginRequest'}
+            example: {email: person@example.test, password: '<user password>'}
+      responses:
+        '200': {$ref: '#/components/responses/Session'}
+        '400': {$ref: '#/components/responses/AuthError'}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '403': {$ref: '#/components/responses/AuthError'}
+        '429': {$ref: '#/components/responses/AuthError'}
+        '500': {$ref: '#/components/responses/AuthError'}
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      operationId: refreshSession
+      summary: Rotate a refresh token and issue a new session
+      security: []
+      x-implementation-status: implemented and source-verified
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RefreshRequest'}
+            example: {refresh_token: '<refresh token returned by login>'}
+      responses:
+        '200': {$ref: '#/components/responses/Session'}
+        '400': {$ref: '#/components/responses/AuthError'}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '429': {$ref: '#/components/responses/AuthError'}
+        '500': {$ref: '#/components/responses/AuthError'}
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Revoke the supplied refresh token
+      security: []
+      x-implementation-status: implemented and source-verified
+      description: No access-token middleware is applied to this route; refresh_token is required.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RefreshRequest'}
+      responses:
+        '204': {description: Refresh token revoked; empty response}
+        '400': {$ref: '#/components/responses/AuthError'}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '500': {$ref: '#/components/responses/AuthError'}
+  /auth/me:
+    get:
+      tags: [Auth]
+      operationId: getCurrentUser
+      summary: Get the authenticated user
+      x-implementation-status: implemented and source-verified
+      description: Accepts an authenticated token including the first-login password-change state.
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/User'}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '404': {$ref: '#/components/responses/AuthError'}
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      operationId: changePassword
+      summary: Change current password
+      x-implementation-status: implemented and source-verified
+      description: Allows the first-login password-change state; returns a new session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChangePasswordRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/Session'}
+        '400': {$ref: '#/components/responses/AuthError'}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '403': {$ref: '#/components/responses/AuthError'}
+  /auth/me/email:
+    patch:
+      tags: [Auth]
+      operationId: changeEmail
+      summary: Change current user's email
+      x-implementation-status: implemented and source-verified
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChangeEmailRequest'}
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/User'}
+        '400': {$ref: '#/components/responses/AuthError'}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '409': {$ref: '#/components/responses/AuthError'}
+  /users:
+    post:
+      tags: [Users]
+      operationId: createUser
+      summary: Create user (CEO)
+      x-implementation-status: implemented and source-verified
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateUserRequest'}
+      responses:
+        '201':
+          description: Created user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/User'}
+        '400': {$ref: '#/components/responses/AuthError'}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '403': {$ref: '#/components/responses/AuthError'}
+        '404': {$ref: '#/components/responses/AuthError'}
+    get:
+      tags: [Users]
+      operationId: listUsers
+      summary: List users (CEO)
+      x-implementation-status: implemented and source-verified
+      responses:
+        '200':
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [users]
+                properties:
+                  users: {type: array, items: {$ref: '#/components/schemas/User'}}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '403': {$ref: '#/components/responses/AuthError'}
+  /users/{id}/status:
+    patch:
+      tags: [Users]
+      operationId: setUserStatus
+      summary: Set user active status (CEO)
+      x-implementation-status: implemented and source-verified
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_active]
+              properties: {is_active: {type: boolean}}
+      responses:
+        '204': {description: Updated; empty response}
+        '400': {$ref: '#/components/responses/AuthError'}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '403': {$ref: '#/components/responses/AuthError'}
+  /users/{id}/reset-password:
+    post:
+      tags: [Users]
+      operationId: resetUserPassword
+      summary: Reset another user's password (CEO)
+      x-implementation-status: implemented and source-verified
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [new_password]
+              properties:
+                new_password: {type: string, format: password, description: '10-72 bytes; at least one letter and one digit'}
+      responses:
+        '204': {description: Reset; empty response}
+        '400': {$ref: '#/components/responses/AuthError'}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '403': {$ref: '#/components/responses/AuthError'}
+  /users/{id}/unlock:
+    post:
+      tags: [Users]
+      operationId: unlockUser
+      summary: Unlock user account (CEO)
+      x-implementation-status: implemented and source-verified
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      responses:
+        '204': {description: Unlocked; empty response}
+        '401': {$ref: '#/components/responses/AuthError'}
+        '403': {$ref: '#/components/responses/AuthError'}
+  /branches:
+    get:
+      tags: [Branches]
+      operationId: listBranches
+      summary: List branches (CEO or Branch Manager)
+      servers:
+        - url: http://localhost:9002/api/v1
+          description: Local Branch API
+        - url: https://api-gateway-domain.example/stage/api/v1
+          description: Future gateway; pending
+      x-implementation-status: implemented; gateway routing pending
+      responses:
+        '200':
+          description: Branch list; Branch Manager receives only their assigned branch
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: '#/components/schemas/Branch'}}
+        '401': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+    post:
+      tags: [Branches]
+      operationId: createBranch
+      summary: Create branch (CEO)
+      servers:
+        - url: http://localhost:9002/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateBranchRequest'}
+      responses:
+        '201':
+          description: Created branch
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Branch'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '401': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '409': {$ref: '#/components/responses/ServiceError'}
+  /branches/{id}:
+    get:
+      tags: [Branches]
+      operationId: getBranch
+      summary: Get a branch (CEO or own-branch Manager)
+      servers:
+        - url: http://localhost:9002/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      responses:
+        '200':
+          description: Branch
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Branch'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+    patch:
+      tags: [Branches]
+      operationId: updateBranch
+      summary: Update branch (CEO)
+      servers:
+        - url: http://localhost:9002/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateBranchRequest'}
+      responses:
+        '200':
+          description: Updated branch
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Branch'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '401': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+  /employees:
+    get:
+      tags: [Employees]
+      operationId: listEmployees
+      summary: List employees
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      description: CEO may filter branch_id; Branch Manager results are scoped to token branch. active=true filters active employees.
+      parameters:
+        - {name: branch_id, in: query, required: false, schema: {type: string, format: uuid}, description: CEO branch filter}
+        - {name: active, in: query, required: false, schema: {type: boolean}}
+      responses:
+        '200':
+          description: Employee list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [employees, total]
+                properties:
+                  employees: {type: array, items: {$ref: '#/components/schemas/Employee'}}
+                  total: {type: integer}
+        '401': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+    post:
+      tags: [Employees]
+      operationId: createEmployee
+      summary: Create employee (CEO or Branch Manager)
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      description: CEO chooses branch_id. Service code overrides it with authenticated branch for Branch Managers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateEmployeeRequest'}
+      responses:
+        '201':
+          description: Created employee
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Employee'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+        '409': {$ref: '#/components/responses/ServiceError'}
+  /employees/{id}:
+    get:
+      tags: [Employees]
+      operationId: getEmployee
+      summary: Get employee by ID
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      responses:
+        '200':
+          description: Employee
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Employee'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+    patch:
+      tags: [Employees]
+      operationId: updateEmployee
+      summary: Update employee (branch cannot be reassigned through this operation)
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateEmployeeRequest'}
+      responses:
+        '200':
+          description: Updated employee
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Employee'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+  /employees/{id}/payment:
+    patch:
+      tags: [Employees]
+      operationId: changeEmployeePayment
+      summary: Change employee payment (CEO or own-branch Manager)
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PaymentRequest'}
+      responses:
+        '200':
+          description: Updated employee
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Employee'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+  /employees/{id}/terminate:
+    post:
+      tags: [Employees]
+      operationId: terminateEmployee
+      summary: Terminate employee (CEO or own-branch Manager)
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [termination_date]
+              properties: {termination_date: {type: string, format: date}}
+      responses:
+        '200':
+          description: Terminated employee
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Employee'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+        '409': {$ref: '#/components/responses/ServiceError'}
+  /attendance/check-in:
+    post:
+      tags: [Attendance]
+      operationId: checkInEmployee
+      summary: Record employee check-in
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      description: CEO may act across branches; Branch Manager must match the employee branch in the verified token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, source]
+              properties:
+                employee_id: {type: string, format: uuid}
+                source: {type: string, enum: [manual, fingerprint]}
+      responses:
+        '201':
+          description: Attendance record and optional deduction
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CheckInResponse'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+        '409': {$ref: '#/components/responses/ServiceError'}
+  /attendance/check-out:
+    post:
+      tags: [Attendance]
+      operationId: checkOutEmployee
+      summary: Record employee check-out
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://api-gateway-domain.example/stage/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      description: CEO may act across branches; Branch Manager must match the employee branch in the verified token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id]
+              properties: {employee_id: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Closed attendance record
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AttendanceRecord'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+  /attendance/deductions/{id}:
+    patch:
+      tags: [Attendance]
+      operationId: adjustDeduction
+      summary: Adjust or cancel a deduction
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://<api-gateway-domain>/<stage>/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cancel, reason]
+              properties:
+                new_amount: {type: number, minimum: 0}
+                cancel: {type: boolean}
+                reason: {type: string, minLength: 3, maxLength: 500}
+      responses:
+        '200':
+          description: Updated deduction
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Deduction'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+        '409': {$ref: '#/components/responses/ServiceError'}
+  /overtime:
+    get:
+      tags: [Overtime]
+      operationId: listOvertime
+      summary: List overtime records
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://<api-gateway-domain>/<stage>/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters:
+        - {name: employee_id, in: query, schema: {type: string, format: uuid}}
+        - {name: status, in: query, schema: {type: string, enum: [pending, approved, rejected]}}
+        - {name: from, in: query, schema: {type: string, format: date}}
+        - {name: to, in: query, schema: {type: string, format: date}}
+      responses:
+        '200':
+          description: Overtime records; BM results are branch-scoped
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [records, total]
+                properties:
+                  records: {type: array, items: {$ref: '#/components/schemas/Overtime'}}
+                  total: {type: integer}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '401': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+    post:
+      tags: [Overtime]
+      operationId: createOvertime
+      summary: Create overtime record
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://<api-gateway-domain>/<stage>/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, work_date, hours, rate_per_hour, source]
+              properties:
+                employee_id: {type: string, format: uuid}
+                work_date: {type: string, format: date}
+                hours: {type: number, exclusiveMinimum: 0}
+                rate_per_hour: {type: number, exclusiveMinimum: 0}
+                source: {type: string, enum: [manual, fingerprint]}
+      responses:
+        '201':
+          description: Created pending overtime
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Overtime'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+  /overtime/{id}:
+    get:
+      tags: [Overtime]
+      operationId: getOvertime
+      summary: Get overtime record
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://<api-gateway-domain>/<stage>/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      responses:
+        '200':
+          description: Overtime record
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Overtime'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+  /overtime/{id}/approve:
+    patch:
+      tags: [Overtime]
+      operationId: approveOvertime
+      summary: Approve overtime
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://<api-gateway-domain>/<stage>/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      responses:
+        '200':
+          description: Approved overtime
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Overtime'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+        '409': {$ref: '#/components/responses/ServiceError'}
+  /overtime/{id}/reject:
+    patch:
+      tags: [Overtime]
+      operationId: rejectOvertime
+      summary: Reject overtime
+      servers:
+        - url: http://localhost:9003/api/v1
+        - url: https://<api-gateway-domain>/<stage>/api/v1
+      x-implementation-status: implemented; gateway routing pending
+      parameters: [{$ref: '#/components/parameters/UUIDPath'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties: {reason: {type: string, minLength: 3, maxLength: 500}}
+      responses:
+        '200':
+          description: Rejected overtime
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Overtime'}
+        '400': {$ref: '#/components/responses/ServiceError'}
+        '403': {$ref: '#/components/responses/ServiceError'}
+        '404': {$ref: '#/components/responses/ServiceError'}
+        '409': {$ref: '#/components/responses/ServiceError'}
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Auth API access token; current token uses HS256, issuer restaurant-backend, no aud claim.
+  parameters:
+    UUIDPath:
+      name: id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+  responses:
+    Session:
+      description: Access and refresh token session
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Session'}
+          example:
+            access_token: mock.access.token
+            token_type: Bearer
+            expires_at: '2030-01-01T00:15:00Z'
+            refresh_token: mock-refresh-token
+            user: {id: '11111111-1111-4111-8111-111111111111', name: Demo CEO, email: ceo@example.test, role: CEO, branch_id: null, is_active: true, must_change_password: false, locked_until: null, last_login_at: null, created_at: '2030-01-01T00:00:00Z'}
+    AuthError:
+      description: Auth API error; 429 may include Retry-After
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+          example: {error: {code: INVALID_CREDENTIALS, message: Invalid email or password}}
+    ServiceError:
+      description: Business-service error
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+          example: {error: {code: validation_error, message: Request is not valid}}
+  schemas:
+    Health:
+      type: object
+      properties: {status: {type: string}, service: {type: string}}
+      required: [status, service]
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties: {code: {type: string}, message: {type: string}}
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties: {email: {type: string}, password: {type: string, format: password}}
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties: {refresh_token: {type: string}}
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, new_password]
+      properties:
+        current_password: {type: string, format: password}
+        new_password: {type: string, format: password, description: '10-72 bytes; at least one letter and one digit'}
+    ChangeEmailRequest:
+      type: object
+      required: [new_email, current_password]
+      properties:
+        new_email: {type: string, format: email, maxLength: 255}
+        current_password: {type: string, format: password}
+    Session:
+      type: object
+      required: [access_token, token_type, expires_at, refresh_token, user]
+      properties:
+        access_token: {type: string}
+        token_type: {type: string, const: Bearer}
+        expires_at: {type: string, format: date-time}
+        refresh_token: {type: string}
+        user: {$ref: '#/components/schemas/User'}
+    User:
+      type: object
+      required: [id, name, email, role, is_active, must_change_password, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        email: {type: string, format: email}
+        role: {type: string, enum: [CEO, BRANCH_MANAGER, SUPPLY_MANAGER]}
+        branch_id: {type: [string, 'null'], format: uuid}
+        is_active: {type: boolean}
+        must_change_password: {type: boolean}
+        locked_until: {type: [string, 'null'], format: date-time}
+        last_login_at: {type: [string, 'null'], format: date-time}
+        created_at: {type: string, format: date-time}
+    CreateUserRequest:
+      type: object
+      required: [name, email, password, role]
+      properties:
+        name: {type: string}
+        email: {type: string}
+        password: {type: string, format: password, description: '10-72 bytes; at least one letter and one digit'}
+        role: {type: string, enum: [CEO, BRANCH_MANAGER, SUPPLY_MANAGER]}
+        branch_id: {type: [string, 'null'], format: uuid}
+    CreateBranchRequest:
+      type: object
+      required: [name, type, address, official_start_time, late_rate]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 100}
+        type: {type: string, enum: [branch, central_kitchen]}
+        address: {type: string}
+        official_start_time: {type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'}
+        late_rate: {type: number, minimum: 0, maximum: 10000, multipleOf: 0.01}
+    UpdateBranchRequest:
+      type: object
+      properties:
+        name: {type: string, minLength: 1, maxLength: 100}
+        address: {type: string}
+        official_start_time: {type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'}
+        late_rate: {type: number, minimum: 0, maximum: 10000, multipleOf: 0.01}
+        is_active: {type: boolean}
+    Branch:
+      type: object
+      required: [id, name, type, address, official_start_time, late_rate, is_active, generates_revenue, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        type: {type: string}
+        address: {type: string}
+        official_start_time: {type: string}
+        late_rate: {type: string, example: '10.00'}
+        is_active: {type: boolean}
+        generates_revenue: {type: boolean}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    CreateEmployeeRequest:
+      type: object
+      required: [name, phone, national_id, branch_id, payment_type, payment_amount, hire_date]
+      properties:
+        name: {type: string, minLength: 2, maxLength: 200}
+        phone: {type: string, pattern: '^[0-9]{10,15}$'}
+        national_id: {type: string, pattern: '^[0-9]{14}$'}
+        branch_id: {type: string, format: uuid}
+        payment_type: {type: string, enum: [daily, monthly]}
+        payment_amount: {type: number, exclusiveMinimum: 0}
+        hire_date: {type: string, format: date}
+        job_title: {type: [string, 'null']}
+        email: {type: [string, 'null'], format: email}
+        address: {type: [string, 'null']}
+    UpdateEmployeeRequest:
+      type: object
+      properties:
+        name: {type: string, minLength: 2, maxLength: 200}
+        phone: {type: string, pattern: '^[0-9]{10,15}$'}
+        job_title: {type: [string, 'null']}
+        email: {type: [string, 'null'], format: email}
+        address: {type: [string, 'null']}
+        payment_type: {type: string, enum: [daily, monthly]}
+        payment_amount: {type: number, exclusiveMinimum: 0}
+    PaymentRequest:
+      type: object
+      required: [payment_type, payment_amount]
+      properties:
+        payment_type: {type: string, enum: [daily, monthly]}
+        payment_amount: {type: number, exclusiveMinimum: 0}
+    Employee:
+      type: object
+      required: [id, name, branch_id, phone, national_id, payment_type, payment_amount, hire_date, active, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        branch_id: {type: string, format: uuid}
+        phone: {type: string}
+        national_id: {type: string}
+        job_title: {type: [string, 'null']}
+        email: {type: [string, 'null']}
+        address: {type: [string, 'null']}
+        payment_type: {type: string}
+        payment_amount: {type: number}
+        hire_date: {type: string, format: date}
+        termination_date: {type: [string, 'null'], format: date}
+        active: {type: boolean}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    CheckInResponse:
+      type: object
+      required: [record]
+      properties:
+        record: {$ref: '#/components/schemas/AttendanceRecord'}
+        deduction: {$ref: '#/components/schemas/Deduction'}
+    AttendanceRecord:
+      type: object
+      required: [id, employee_id, branch_id, work_date, check_in_at, status, source, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        employee_id: {type: string, format: uuid}
+        branch_id: {type: string, format: uuid}
+        work_date: {type: string, format: date}
+        check_in_at: {type: string, format: date-time}
+        check_out_at: {type: [string, 'null'], format: date-time}
+        status: {type: string}
+        source: {type: string}
+        deduction: {$ref: '#/components/schemas/Deduction'}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    Deduction:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        attendance_id: {type: string, format: uuid}
+        employee_id: {type: string, format: uuid}
+        branch_id: {type: string, format: uuid}
+        work_date: {type: string, format: date}
+        late_minutes: {type: integer}
+        completed_hours: {type: integer}
+        rate_per_hour: {type: number}
+        original_amount: {type: number}
+        adjusted_amount: {type: [number, 'null']}
+        adjustment_reason: {type: [string, 'null']}
+        adjusted_by: {type: [string, 'null']}
+        adjusted_at: {type: [string, 'null'], format: date-time}
+        cancelled: {type: boolean}
+        cancelled_by: {type: [string, 'null']}
+        cancelled_at: {type: [string, 'null'], format: date-time}
+        cancel_reason: {type: [string, 'null']}
+        effective_amount: {type: number}
+        source: {type: string}
+        created_at: {type: string, format: date-time}
+    Overtime:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        employee_id: {type: string, format: uuid}
+        branch_id: {type: string, format: uuid}
+        work_date: {type: string, format: date}
+        hours: {type: number}
+        rate_per_hour: {type: number}
+        amount: {type: number}
+        status: {type: string, enum: [pending, approved, rejected]}
+        source: {type: string, enum: [manual, fingerprint]}
+        is_payable: {type: boolean}
+        approved_by: {type: [string, 'null']}
+        approved_at: {type: [string, 'null'], format: date-time}
+        rejected_by: {type: [string, 'null']}
+        rejected_at: {type: [string, 'null'], format: date-time}
+        rejection_reason: {type: [string, 'null']}
+        created_by: {type: string}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
