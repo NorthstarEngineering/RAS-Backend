@@ -1,0 +1,31 @@
+# Secrets and generated files
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Go outputs
+**/bin/
+**/coverage.out
+
+# Terraform state, plans, providers, and local vars
+**/.terraform/
+**/.tools/
+infra/terraform/dev/jwt-authorizer.zip
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Local-only backups/history, may contain historical secrets
+.git-preservation/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
