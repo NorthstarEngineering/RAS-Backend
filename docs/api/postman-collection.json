@@ -1,0 +1,34 @@
+{
+  "info": {
+    "name": "RAS Backend Mobile API (source-backed)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Local API examples. No credentials included. Set per-service base URLs in an environment."
+  },
+  "variable": [
+    {"key": "authBaseUrl", "value": "http://localhost:9001/api/v1"},
+    {"key": "branchBaseUrl", "value": "http://localhost:9002/api/v1"},
+    {"key": "attendanceBaseUrl", "value": "http://localhost:9003/api/v1"},
+    {"key": "accessToken", "value": ""},
+    {"key": "refreshToken", "value": ""},
+    {"key": "branchId", "value": "11111111-1111-4111-8111-111111111111"},
+    {"key": "employeeId", "value": "22222222-2222-4222-8222-222222222222"}
+  ],
+  "item": [
+    {"name": "Auth", "item": [
+      {"name": "Login", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"email\": \"<development-user-email>\",\n  \"password\": \"<development-user-password>\"\n}"}, "url": "{{authBaseUrl}}/auth/login"}},
+      {"name": "Current user", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}], "url": "{{authBaseUrl}}/auth/me"}},
+      {"name": "Refresh", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"}, "url": "{{authBaseUrl}}/auth/refresh"}},
+      {"name": "Logout", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"}, "url": "{{authBaseUrl}}/auth/logout"}}
+    ]},
+    {"name": "Branches", "item": [
+      {"name": "List branches", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}], "url": "{{branchBaseUrl}}/branches"}}
+    ]},
+    {"name": "Employees", "item": [
+      {"name": "List employees", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}], "url": "{{attendanceBaseUrl}}/employees?active=true"}},
+      {"name": "Create employee (example only)", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"<name>\",\n  \"phone\": \"<10-15 digits>\",\n  \"national_id\": \"<14 digits>\",\n  \"branch_id\": \"{{branchId}}\",\n  \"payment_type\": \"monthly\",\n  \"payment_amount\": 1,\n  \"hire_date\": \"2030-01-01\"\n}"}, "url": "{{attendanceBaseUrl}}/employees"}}
+    ]},
+    {"name": "Attendance", "item": [
+      {"name": "Check in (example only; branch authorization gap exists)", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"employee_id\": \"{{employeeId}}\",\n  \"source\": \"manual\"\n}"}, "url": "{{attendanceBaseUrl}}/attendance/check-in"}}
+    ]}
+  ]
+}

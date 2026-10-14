@@ -1,0 +1,18 @@
+{
+  "access_token": "mock.access.token.not-valid-for-authentication",
+  "token_type": "Bearer",
+  "expires_at": "2030-01-01T00:15:00Z",
+  "refresh_token": "mock-refresh-token-not-valid-for-authentication",
+  "user": {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "name": "Demo CEO",
+    "email": "ceo@example.test",
+    "role": "CEO",
+    "branch_id": null,
+    "is_active": true,
+    "must_change_password": false,
+    "locked_until": null,
+    "last_login_at": null,
+    "created_at": "2030-01-01T00:00:00Z"
+  }
+}
