@@ -184,3 +184,25 @@ The project owner requested a local Terraform profile file. The provider now acc
 
 The Go unit tests, vet, independent builds, Docker image builds, and PostgreSQL migration/integration tests remain unrun locally due to Go/WSL and Docker availability. No new GitHub Actions run was triggered.
 
+## Three latest service CI failures and local fix (2026-10-14)
+
+Inspected the user's three latest failed PR #7 runs:
+
+| Run | CI result / exact issue |
+|---|---|
+| [Auth run 38534752468](https://github.com/NorthstarEngineering/RAS-Backend/actions/runs/38534752468) | `Check formatting` failed for `services/auth-api/cmd/api/main.go`, `services/auth-api/internal/auth/service/service_test.go`, and `services/auth-api/internal/database/postgres.go`. Vet, unit tests, binary build, and Docker image build passed. The aggregate validation step failed only because formatting was still marked failed. |
+| [Branch run 38534752457](https://github.com/NorthstarEngineering/RAS-Backend/actions/runs/38534752457) | Formatting failed for `services/branch-api/cmd/api/main.go`, `services/branch-api/internal/branch/model.go`, `interfaces.go`, `handler.go`, `dto.go`, and `services/branch-api/internal/authn/middleware.go` plus `middleware_test.go`. Vet, tests, binary build, and Docker image build also failed because `cmd/api/main.go:36:30` referenced undefined `envInt`. |
+| [Attendance run 38534752435](https://github.com/NorthstarEngineering/RAS-Backend/actions/runs/38534752435) | `Check formatting` failed for `services/attendance-api/cmd/api/main.go`, `services/attendance-api/internal/overtime/handler.go`, `services/attendance-api/internal/authn/middleware.go`, and `middleware_test.go`. Vet, unit tests, binary build, and Docker image build passed. The aggregate validation step failed only because formatting was still marked failed. |
+
+Local changes: formatted the 14 files listed above using Go 1.27.2 `gofmt`; added an `envInt` helper to `services/branch-api/cmd/api/main.go` that parses positive integers and falls back to the configured default for empty, invalid, or nonpositive values. No business routes or API contracts were changed.
+
+Local results after the fix:
+
+| Service | gofmt check | `go vet ./...` | `go test ./...` | `go build ./cmd/api` |
+|---|---|---|---|---|
+| Auth API | Passed | Passed | Passed (`internal/auth/service`; other packages have no tests) | Passed |
+| Branch API | Passed | Passed | Passed (`internal/authn`; other packages have no tests) | Passed |
+| Attendance API | Passed | Passed | Passed (`internal/attendance`, `internal/authn`; other packages have no tests) | Passed |
+
+Local Docker image build attempts could not reach BuildKit: each failed opening `C:\Users\myfin\.docker\buildx\.lock` with `Access is denied`. Earlier `docker info` also showed the Docker Desktop Linux engine pipe missing. This is a local environment limitation; it is not a successful local image-build result. In the GitHub runs before the fix, Auth and Attendance image builds passed, while Branch's image build failed from the same `undefined: envInt` compilation error. No new GitHub Actions run was triggered, and no commit or push was made.
+
