@@ -1,0 +1,7 @@
+aws_region        = "eu-west-3"
+aws_profile       = "terraform" # Local use only; omit in GitHub Actions (OIDC).
+app_secret_arn    = "arn:aws:secretsmanager:eu-west-3:ACCOUNT:secret:ras-backend/dev/app-REPLACE"
+authorizer_jwt_secret_arn = "arn:aws:secretsmanager:eu-west-3:ACCOUNT:secret:ras-backend/dev/jwt-signing-REPLACE"
+api_cors_allowed_origins = [] # Add exact trusted browser origins only if needed.
+application_instance_type = "t3.small"
+database_instance_class   = "db.t4g.micro"

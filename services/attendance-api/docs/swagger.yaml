@@ -1,0 +1,923 @@
+definitions:
+  internal_attendance.AdjustDeductionRequest:
+    properties:
+      cancel:
+        description: Cancel — لو true، الخصم يتلغى بالكامل
+        type: boolean
+      new_amount:
+        description: NewAmount — القيمة الجديدة للخصم (لو التعديل في المبلغ)
+        minimum: 0
+        type: number
+      reason:
+        description: |-
+          Reason — إجباري في كل تعديل/إلغاء
+          Ref: FR-DED-009, BR-010
+        maxLength: 500
+        minLength: 3
+        type: string
+    required:
+    - reason
+    type: object
+  internal_attendance.AttendanceRecordResponse:
+    properties:
+      branch_id:
+        type: string
+      check_in_at:
+        type: string
+      check_out_at:
+        type: string
+      created_at:
+        type: string
+      deduction:
+        $ref: '#/definitions/internal_attendance.DeductionResponse'
+      employee_id:
+        type: string
+      id:
+        type: string
+      source:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      work_date:
+        type: string
+    type: object
+  internal_attendance.CheckInRequest:
+    properties:
+      employee_id:
+        type: string
+      source:
+        enum:
+        - manual
+        - fingerprint
+        type: string
+    required:
+    - employee_id
+    - source
+    type: object
+  internal_attendance.CheckInResponse:
+    properties:
+      deduction:
+        $ref: '#/definitions/internal_attendance.DeductionResponse'
+      record:
+        $ref: '#/definitions/internal_attendance.AttendanceRecordResponse'
+    type: object
+  internal_attendance.CheckOutRequest:
+    properties:
+      employee_id:
+        type: string
+    required:
+    - employee_id
+    type: object
+  internal_attendance.DeductionResponse:
+    properties:
+      adjusted_amount:
+        type: number
+      adjusted_at:
+        type: string
+      adjusted_by:
+        type: string
+      adjustment_reason:
+        type: string
+      attendance_id:
+        type: string
+      branch_id:
+        type: string
+      cancel_reason:
+        type: string
+      cancelled:
+        type: boolean
+      cancelled_at:
+        type: string
+      cancelled_by:
+        type: string
+      completed_hours:
+        type: integer
+      created_at:
+        type: string
+      effective_amount:
+        type: number
+      employee_id:
+        type: string
+      id:
+        type: string
+      late_minutes:
+        type: integer
+      original_amount:
+        type: number
+      rate_per_hour:
+        type: number
+      source:
+        type: string
+      work_date:
+        type: string
+    type: object
+  internal_attendance.ErrorBody:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  internal_attendance.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/internal_attendance.ErrorBody'
+    type: object
+  internal_employee.ChangePaymentRequest:
+    properties:
+      payment_amount:
+        type: number
+      payment_type:
+        enum:
+        - daily
+        - monthly
+        type: string
+    required:
+    - payment_amount
+    - payment_type
+    type: object
+  internal_employee.CreateEmployeeRequest:
+    properties:
+      address:
+        type: string
+      branch_id:
+        type: string
+      email:
+        type: string
+      hire_date:
+        description: '"2026-10-11"'
+        type: string
+      job_title:
+        type: string
+      name:
+        maxLength: 200
+        minLength: 2
+        type: string
+      national_id:
+        type: string
+      payment_amount:
+        type: number
+      payment_type:
+        enum:
+        - daily
+        - monthly
+        type: string
+      phone:
+        type: string
+    required:
+    - branch_id
+    - hire_date
+    - name
+    - national_id
+    - payment_amount
+    - payment_type
+    - phone
+    type: object
+  internal_employee.EmployeeResponse:
+    properties:
+      active:
+        type: boolean
+      address:
+        type: string
+      branch_id:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      hire_date:
+        description: '"2026-10-11"'
+        type: string
+      id:
+        type: string
+      job_title:
+        type: string
+      name:
+        type: string
+      national_id:
+        type: string
+      payment_amount:
+        type: number
+      payment_type:
+        type: string
+      phone:
+        type: string
+      termination_date:
+        description: '"2026-10-11"'
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_employee.ErrorBody:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  internal_employee.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/internal_employee.ErrorBody'
+    type: object
+  internal_employee.ListEmployeesResponse:
+    properties:
+      employees:
+        items:
+          $ref: '#/definitions/internal_employee.EmployeeResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_employee.TerminateRequest:
+    properties:
+      termination_date:
+        description: '"2026-10-11"'
+        type: string
+    required:
+    - termination_date
+    type: object
+  internal_employee.UpdateEmployeeRequest:
+    properties:
+      address:
+        type: string
+      email:
+        type: string
+      job_title:
+        type: string
+      name:
+        maxLength: 200
+        minLength: 2
+        type: string
+      payment_amount:
+        type: number
+      payment_type:
+        enum:
+        - daily
+        - monthly
+        type: string
+      phone:
+        type: string
+    type: object
+  internal_overtime.CreateOvertimeRequest:
+    properties:
+      employee_id:
+        type: string
+      hours:
+        type: number
+      rate_per_hour:
+        type: number
+      source:
+        enum:
+        - manual
+        - fingerprint
+        type: string
+      work_date:
+        description: '"2026-10-11"'
+        type: string
+    required:
+    - employee_id
+    - hours
+    - rate_per_hour
+    - source
+    - work_date
+    type: object
+  internal_overtime.ErrorBody:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  internal_overtime.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/internal_overtime.ErrorBody'
+    type: object
+  internal_overtime.ListOvertimeResponse:
+    properties:
+      records:
+        items:
+          $ref: '#/definitions/internal_overtime.OvertimeResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_overtime.OvertimeResponse:
+    properties:
+      amount:
+        description: hours × rate
+        type: number
+      approved_at:
+        type: string
+      approved_by:
+        description: '---------- الموافقة ----------'
+        type: string
+      branch_id:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        description: '---------- الإنشاء ----------'
+        type: string
+      employee_id:
+        type: string
+      hours:
+        description: '---------- الحساب ----------'
+        type: number
+      id:
+        type: string
+      is_payable:
+        description: |-
+          ---------- Payable ----------
+          Ref: BR-011 — OT يبقى payable بعد الموافقة
+        type: boolean
+      rate_per_hour:
+        type: number
+      rejected_at:
+        type: string
+      rejected_by:
+        description: '---------- الرفض ----------'
+        type: string
+      rejection_reason:
+        type: string
+      source:
+        type: string
+      status:
+        description: '---------- الحالة ----------'
+        type: string
+      updated_at:
+        type: string
+      work_date:
+        description: '"2026-10-11"'
+        type: string
+    type: object
+  internal_overtime.RejectOvertimeRequest:
+    properties:
+      reason:
+        maxLength: 500
+        minLength: 3
+        type: string
+    required:
+    - reason
+    type: object
+host: localhost:9003
+info:
+  contact: {}
+  description: Attendance, Employee Management, and Overtime modules
+  title: Restaurant Attendance API
+  version: "1.0"
+paths:
+  /attendance/check-in:
+    post:
+      consumes:
+      - application/json
+      description: Records an employee check-in and automatically calculates lateness
+        deduction if applicable
+      parameters:
+      - description: Check-in data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_attendance.CheckInRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_attendance.CheckInResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+      summary: Record employee check-in
+      tags:
+      - attendance
+  /attendance/check-out:
+    post:
+      consumes:
+      - application/json
+      description: Records check-out for the currently open attendance record
+      parameters:
+      - description: Check-out data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_attendance.CheckOutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_attendance.AttendanceRecordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+      summary: Record employee check-out
+      tags:
+      - attendance
+  /attendance/deductions/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: Allows CEO or Branch Manager to adjust (increase/decrease) or cancel
+        a deduction. BM is limited to their own branch.
+      parameters:
+      - description: Deduction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Adjustment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_attendance.AdjustDeductionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_attendance.DeductionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_attendance.ErrorResponse'
+      summary: Adjust or cancel a deduction
+      tags:
+      - attendance
+  /employees:
+    get:
+      consumes:
+      - application/json
+      description: CEO sees all employees. BM sees only their branch.
+      parameters:
+      - description: Filter by branch ID (CEO only)
+        in: query
+        name: branch_id
+        type: string
+      - description: Filter active only (true/false)
+        in: query
+        name: active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_employee.ListEmployeesResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+      summary: List employees
+      tags:
+      - employee
+    post:
+      consumes:
+      - application/json
+      description: CEO can create employees in any branch. BM creates only in their
+        own branch (BR-003).
+      parameters:
+      - description: Employee data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_employee.CreateEmployeeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_employee.EmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+      summary: Create a new employee
+      tags:
+      - employee
+  /employees/{id}:
+    get:
+      consumes:
+      - application/json
+      description: CEO can fetch any employee. BM only their branch.
+      parameters:
+      - description: Employee ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_employee.EmployeeResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+      summary: Get employee by ID
+      tags:
+      - employee
+    patch:
+      consumes:
+      - application/json
+      description: CEO any branch. BM own branch only.
+      parameters:
+      - description: Employee ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_employee.UpdateEmployeeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_employee.EmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+      summary: Update employee data
+      tags:
+      - employee
+  /employees/{id}/payment:
+    patch:
+      consumes:
+      - application/json
+      description: 'Ref: FR-EMP-006. Changes the payment type (daily/monthly) and
+        amount.'
+      parameters:
+      - description: Employee ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_employee.ChangePaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_employee.EmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+      summary: Change employee payment (type + amount)
+      tags:
+      - employee
+  /employees/{id}/terminate:
+    post:
+      consumes:
+      - application/json
+      description: Marks employee as inactive and sets termination date.
+      parameters:
+      - description: Employee ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Termination data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_employee.TerminateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_employee.EmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_employee.ErrorResponse'
+      summary: Terminate (deactivate) employee
+      tags:
+      - employee
+  /overtime:
+    get:
+      consumes:
+      - application/json
+      description: CEO sees all. BM only their branch. Filter by employee, status,
+        date range.
+      parameters:
+      - description: Filter by employee ID
+        in: query
+        name: employee_id
+        type: string
+      - description: Filter by status (pending/approved/rejected)
+        in: query
+        name: status
+        type: string
+      - description: From date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: To date (YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_overtime.ListOvertimeResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+      summary: List overtime records
+      tags:
+      - overtime
+    post:
+      consumes:
+      - application/json
+      description: CEO can create for any branch. BM only their own branch. Record
+        starts as pending.
+      parameters:
+      - description: Overtime data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_overtime.CreateOvertimeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_overtime.OvertimeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+      summary: Create overtime record
+      tags:
+      - overtime
+  /overtime/{id}:
+    get:
+      consumes:
+      - application/json
+      description: CEO any. BM only their branch.
+      parameters:
+      - description: Overtime ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_overtime.OvertimeResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+      summary: Get overtime by ID
+      tags:
+      - overtime
+  /overtime/{id}/approve:
+    patch:
+      consumes:
+      - application/json
+      description: 'Ref: FR-OT-007, BR-011. Makes OT payable. Only CEO or BM (own
+        branch).'
+      parameters:
+      - description: Overtime ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_overtime.OvertimeResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+      summary: Approve overtime
+      tags:
+      - overtime
+  /overtime/{id}/reject:
+    patch:
+      consumes:
+      - application/json
+      description: 'Ref: FR-OT-008. Requires reason. Only CEO or BM (own branch).'
+      parameters:
+      - description: Overtime ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Rejection reason
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_overtime.RejectOvertimeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_overtime.OvertimeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_overtime.ErrorResponse'
+      summary: Reject overtime
+      tags:
+      - overtime
+securityDefinitions:
+  BearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: Use Bearer followed by the Auth API access token.
+security:
+  - BearerAuth: []
+swagger: "2.0"

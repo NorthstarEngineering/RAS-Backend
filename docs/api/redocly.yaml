@@ -1,0 +1,9 @@
+extends:
+  - recommended
+rules:
+  # Local URLs and placeholder gateway hosts are intentional; no cloud endpoint exists yet.
+  no-server-example.com: off
+  # This private project has not selected a license.
+  info-license: off
+  # Health handlers document success behavior; they have no application 4xx contract.
+  operation-4xx-response: off

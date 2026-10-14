@@ -1,0 +1,11 @@
+{
+  "name": "RAS Backend - local placeholders",
+  "values": [
+    {"key": "authBaseUrl", "value": "http://localhost:9001/api/v1", "enabled": true},
+    {"key": "branchBaseUrl", "value": "http://localhost:9002/api/v1", "enabled": true},
+    {"key": "attendanceBaseUrl", "value": "http://localhost:9003/api/v1", "enabled": true},
+    {"key": "apiGatewayBaseUrl", "value": "https://<api-gateway-domain>/<stage>", "enabled": false},
+    {"key": "accessToken", "value": "", "enabled": false},
+    {"key": "refreshToken", "value": "", "enabled": false}
+  ]
+}

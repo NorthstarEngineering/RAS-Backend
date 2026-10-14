@@ -23,11 +23,13 @@ CREATE UNIQUE INDEX users_email_lower_uq ON users (LOWER(email));
 CREATE UNIQUE INDEX users_single_ceo_uq ON users (role) WHERE role = 'CEO';
 CREATE INDEX users_branch_idx ON users (branch_id);
 
+-- +goose StatementBegin
 DO $$ BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'auth_app') THEN
         EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON users TO auth_app';
     END IF;
 END $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP TABLE users;

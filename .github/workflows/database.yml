@@ -1,0 +1,102 @@
+name: Database migration validation
+
+on:
+  pull_request:
+    paths:
+      - 'database/**'
+      - 'services/**/internal/**'
+      - 'tests/integration/**'
+      - 'deploy/**'
+      - '.github/workflows/database.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'database/**'
+      - 'services/**/internal/**'
+      - 'tests/integration/**'
+      - 'deploy/**'
+      - '.github/workflows/database.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate-fresh-and-verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: restaurant_db
+          POSTGRES_USER: migration_admin
+          POSTGRES_PASSWORD: ci_migration_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migration_admin -d restaurant_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/auth-api/go.mod
+      - name: Install Goose
+        run: go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+      - name: Create restricted runtime database roles
+        env:
+          PGPASSWORD: ci_migration_password
+        run: >-
+          psql -h localhost -U migration_admin -d restaurant_db -v ON_ERROR_STOP=1
+          -v auth_password=ci_auth_password
+          -v branch_password=ci_branch_password
+          -v attendance_password=ci_attendance_password
+          -f database/bootstrap/roles.sql
+      - name: Apply complete migration history to fresh database
+        env:
+          GOOSE_DRIVER: postgres
+          GOOSE_DBSTRING: host=localhost port=5432 user=migration_admin password=ci_migration_password dbname=restaurant_db sslmode=disable
+          GOOSE_MIGRATION_DIR: database/migrations
+          GOOSE_TABLE: goose_db_version
+        run: goose up
+      - name: Verify repository tables and constraints with disposable inserts
+        env:
+          PGPASSWORD: ci_migration_password
+        run: psql -h localhost -U migration_admin -d restaurant_db -v ON_ERROR_STOP=1 -f tests/integration/schema.sql
+      - name: Verify runtime roles and table privileges
+        env:
+          PGPASSWORD: ci_migration_password
+        run: psql -h localhost -U migration_admin -d restaurant_db -v ON_ERROR_STOP=1 -f tests/integration/roles.sql
+      - name: Verify Goose migration state
+        env:
+          GOOSE_DRIVER: postgres
+          GOOSE_DBSTRING: host=localhost port=5432 user=migration_admin password=ci_migration_password dbname=restaurant_db sslmode=disable
+          GOOSE_MIGRATION_DIR: database/migrations
+          GOOSE_TABLE: goose_db_version
+        run: goose status
+
+  publish-migration-runner:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: migrate-fresh-and-verify
+    runs-on: ubuntu-latest
+    environment: development-publish
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and publish migration runner by commit SHA
+        env:
+          ECR_REPOSITORY: ${{ vars.ECR_DATABASE_REPOSITORY }}
+        run: |
+          set -euo pipefail
+          image="${ECR_REPOSITORY}:${GITHUB_SHA}"
+          docker build -f database/Dockerfile -t "$image" .
+          docker push "$image"

@@ -1,0 +1,150 @@
+name: ras-backend
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-restaurant_db}
+      POSTGRES_USER: ${MIGRATION_DB_USER:-migration_admin}
+      POSTGRES_PASSWORD: ${MIGRATION_DB_PASSWORD:?Set MIGRATION_DB_PASSWORD in .env}
+    command: ["postgres", "-c", "app.environment=development"]
+    ports:
+      - "${DB_PORT_FORWARD:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../tests/integration:/tests:ro
+      - ../database/seeds:/database/seeds:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  role-bootstrap:
+    image: postgres:16-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${DB_NAME:-restaurant_db}
+      PGUSER: ${MIGRATION_DB_USER:-migration_admin}
+      PGPASSWORD: ${MIGRATION_DB_PASSWORD:?Set MIGRATION_DB_PASSWORD in .env}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:?Set AUTH_DB_PASSWORD in .env}
+      BRANCH_DB_PASSWORD: ${BRANCH_DB_PASSWORD:?Set BRANCH_DB_PASSWORD in .env}
+      ATTENDANCE_DB_PASSWORD: ${ATTENDANCE_DB_PASSWORD:?Set ATTENDANCE_DB_PASSWORD in .env}
+    volumes:
+      - ../database/bootstrap/roles.sql:/bootstrap/roles.sql:ro
+    entrypoint: ["/bin/sh", "-ec"]
+    command: >-
+      psql -v ON_ERROR_STOP=1
+      -v auth_password="$${AUTH_DB_PASSWORD}"
+      -v branch_password="$${BRANCH_DB_PASSWORD}"
+      -v attendance_password="$${ATTENDANCE_DB_PASSWORD}"
+      -f /bootstrap/roles.sql
+    restart: "no"
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: database/Dockerfile
+    depends_on:
+      role-bootstrap:
+        condition: service_completed_successfully
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: "host=postgres port=5432 user=${MIGRATION_DB_USER:-migration_admin} password=${MIGRATION_DB_PASSWORD:?Set MIGRATION_DB_PASSWORD in .env} dbname=${DB_NAME:-restaurant_db} sslmode=disable"
+      GOOSE_MIGRATION_DIR: /migrations
+      GOOSE_TABLE: goose_db_version
+    command: ["up"]
+    restart: "no"
+
+  auth-api:
+    build:
+      context: ../services/auth-api
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      PORT: "9001"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-restaurant_db}
+      DB_USER: auth_app
+      DB_PASSWORD: ${AUTH_DB_PASSWORD:?Set AUTH_DB_PASSWORD in .env}
+      DB_SSLMODE: disable
+      DB_MAX_OPEN_CONNS: ${DB_MAX_OPEN_CONNS:-5}
+      DB_MAX_IDLE_CONNS: ${DB_MAX_IDLE_CONNS:-2}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SEED_CEO_NAME: ${SEED_CEO_NAME:-CEO}
+      SEED_CEO_EMAIL: ${SEED_CEO_EMAIL:?Set SEED_CEO_EMAIL in .env}
+      SEED_CEO_PASSWORD: ${SEED_CEO_PASSWORD:?Set SEED_CEO_PASSWORD in .env}
+    ports: ["9001:9001"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  branch-api:
+    build:
+      context: ../services/branch-api
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: "9002"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-restaurant_db}
+      DB_USER: branch_app
+      DB_PASSWORD: ${BRANCH_DB_PASSWORD:?Set BRANCH_DB_PASSWORD in .env}
+      DB_SSLMODE: disable
+      DB_MAX_OPEN_CONNS: ${DB_MAX_OPEN_CONNS:-5}
+      DB_MAX_IDLE_CONNS: "2"
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    ports: ["9002:9002"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9002/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  attendance-api:
+    build:
+      context: ../services/attendance-api
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: "9003"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-restaurant_db}
+      DB_USER: attendance_app
+      DB_PASSWORD: ${ATTENDANCE_DB_PASSWORD:?Set ATTENDANCE_DB_PASSWORD in .env}
+      DB_SSLMODE: disable
+      DB_MAX_OPEN_CONNS: ${DB_MAX_OPEN_CONNS:-5}
+      DB_MAX_IDLE_CONNS: ${DB_MAX_IDLE_CONNS:-2}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    ports: ["9003:9003"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9003/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    name: ras_backend_postgres_data
