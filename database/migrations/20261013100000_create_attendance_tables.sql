@@ -111,11 +111,13 @@ CREATE INDEX idx_ot_branch_date ON overtime (branch_id, work_date);
 CREATE INDEX idx_ot_status ON overtime (status);
 CREATE INDEX idx_ot_pending ON overtime (branch_id, created_at) WHERE status = 'pending';
 
+-- +goose StatementBegin
 DO $$ BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'attendance_app') THEN
         EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON employees, attendance_records, deductions, overtime TO attendance_app';
     END IF;
 END $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP TABLE overtime;
