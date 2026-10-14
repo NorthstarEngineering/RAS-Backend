@@ -2,6 +2,11 @@ variable "aws_region" {
   type        = string
   description = "AWS region for development resources."
 }
+variable "aws_profile" {
+  type        = string
+  description = "Optional local AWS CLI profile. Leave unset in CI to use GitHub OIDC credentials."
+  default     = null
+}
 variable "app_secret_arn" {
   type        = string
   description = "Pre-created Secrets Manager secret ARN holding shared JWT, runtime DB passwords, and development CEO bootstrap values."
