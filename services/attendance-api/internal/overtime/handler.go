@@ -91,8 +91,8 @@ func (h *Handler) create(c *gin.Context) {
 	if h.employeeBranchLookup != nil {
 		branchID, err := h.employeeBranchLookup(c.Request.Context(), req.EmployeeID)
 		if err != nil {
-            slog.Error("employee branch lookup failed", "service", "attendance-api", "request_id", c.GetString("request_id"), "area", "overtime")
-            writeError(c, http.StatusInternalServerError, "internal_error", "something went wrong")
+			slog.Error("employee branch lookup failed", "service", "attendance-api", "request_id", c.GetString("request_id"), "area", "overtime")
+			writeError(c, http.StatusInternalServerError, "internal_error", "something went wrong")
 			return
 		}
 		employeeBranchID = branchID

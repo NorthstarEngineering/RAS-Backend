@@ -1,0 +1,112 @@
+name: auth-api CI and image publishing
+
+on:
+  pull_request:
+    paths:
+      - 'services/auth-api/**'
+      - 'database/migrations/**'
+      - 'database/bootstrap/**'
+      - 'tests/integration/**'
+      - 'deploy/**'
+      - '.env.example'
+      - 'Makefile'
+      - 'README.md'
+      - 'docs/**'
+      - '.github/workflows/auth-api.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'services/auth-api/**'
+      - 'database/migrations/**'
+      - 'database/bootstrap/**'
+      - 'tests/integration/**'
+      - 'deploy/**'
+      - '.env.example'
+      - 'Makefile'
+      - 'README.md'
+      - 'docs/**'
+      - '.github/workflows/auth-api.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/auth-api/go.mod
+          cache-dependency-path: services/auth-api/go.sum
+      - name: Check formatting
+        id: formatting
+        run: |
+          unformatted="$(gofmt -l $(find services/auth-api -name '*.go'))"
+          if [ -n "$unformatted" ]; then
+            printf 'Files require gofmt:\n%s\n' "$unformatted"
+            exit 1
+          fi
+        continue-on-error: true
+      - name: Vet
+        id: vet
+        working-directory: services/auth-api
+        run: go vet ./...
+        continue-on-error: true
+      - name: Unit tests
+        id: unit_tests
+        working-directory: services/auth-api
+        run: go test ./...
+        continue-on-error: true
+      - name: Build
+        id: build
+        working-directory: services/auth-api
+        run: go build ./cmd/api
+        continue-on-error: true
+      - name: Build container image
+        id: image_build
+        run: docker build -f services/auth-api/Dockerfile -t auth-api:ci services/auth-api
+        continue-on-error: true
+      - name: Report validation results
+        if: always()
+        env:
+          FORMAT_RESULT: ${{ steps.formatting.outcome }}
+          VET_RESULT: ${{ steps.vet.outcome }}
+          TEST_RESULT: ${{ steps.unit_tests.outcome }}
+          BUILD_RESULT: ${{ steps.build.outcome }}
+          IMAGE_RESULT: ${{ steps.image_build.outcome }}
+        run: |
+          failed=0
+          for result in FORMAT_RESULT VET_RESULT TEST_RESULT BUILD_RESULT IMAGE_RESULT; do
+            value="${!result}"
+            if [ "$value" != "success" ]; then
+              echo "::error::$result ended with $value"
+              failed=1
+            fi
+          done
+          exit "$failed"
+  publish:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: development-publish
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and publish immutable commit image
+        env:
+          ECR_REPOSITORY: ${{ vars.ECR_AUTH_REPOSITORY }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+        run: |
+          set -euo pipefail
+          image="${ECR_REPOSITORY}:${GITHUB_SHA}"
+          docker build -f services/auth-api/Dockerfile -t "$image" services/auth-api
+          docker push "$image"

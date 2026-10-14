@@ -101,7 +101,9 @@ func (m *memUsers) Unlock(_ context.Context, id uuid.UUID, _ time.Time) error {
 	return nil
 }
 
-type memRefresh struct{ byHash map[string]*model.RefreshToken }
+type memRefresh struct {
+	byHash map[string]*model.RefreshToken
+}
 
 func (m *memRefresh) Create(_ context.Context, t *model.RefreshToken) error {
 	cp := *t

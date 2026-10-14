@@ -20,8 +20,8 @@ The three API pools are limited to five open/two idle connections each. PostgreS
 
 ## Prerequisites
 
-1. Approved AWS identity/profile and region. The local `terraform` CLI profile successfully returned an AWS account identity.
-2. A remote state bucket in a separate bootstrap step with versioning enabled, default encryption, and every S3 public-access-block setting enabled. Terraform uses native S3 lockfiles (Terraform >=1.10). The discovered candidate bucket currently has versioning disabled and public access block disabled; it must not be used for Terraform state until safely configured.
+1. Approved AWS identity/profile and region. The local `terraform` CLI profile successfully returned an AWS account identity. The project region is `eu-west-3`.
+2. A remote state bucket in a separate bootstrap step with versioning enabled, default encryption, and every S3 public-access-block setting enabled. Terraform uses native S3 lockfiles (Terraform >=1.10). The owner-provided CLI output for candidate bucket `takwa231018545` shows versioning disabled (empty versioning response), all four public-access-block settings `false`, and default SSE-S3/AES256 encryption enabled. Do not use it for Terraform state until versioning and all public-access-block settings are enabled and reverified. No bucket settings were changed.
 3. A Secrets Manager app secret JSON containing `JWT_SECRET`, `AUTH_DB_PASSWORD`, `BRANCH_DB_PASSWORD`, `ATTENDANCE_DB_PASSWORD`, `SEED_CEO_NAME`, `SEED_CEO_EMAIL`, and `SEED_CEO_PASSWORD`, plus a dedicated JWT-only secret containing the raw signing key. The Lambda authorizer role can read only the JWT-only secret. The read-only check found no matching app secret. Generate separate values and store them only in Secrets Manager.
 4. GitHub OIDC role, protected `development-publish` environment, and ECR repository URI variables before image publishing. These are not assumed to exist.
 

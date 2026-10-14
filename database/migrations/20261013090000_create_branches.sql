@@ -12,6 +12,7 @@ CREATE TABLE branches (
 );
 CREATE INDEX idx_branches_active ON branches (is_active) WHERE is_active = TRUE;
 
+-- +goose StatementBegin
 DO $$ BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'branch_app') THEN
         EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON branches TO branch_app';
@@ -23,6 +24,7 @@ DO $$ BEGIN
         EXECUTE 'GRANT SELECT ON branches TO attendance_app';
     END IF;
 END $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP INDEX idx_branches_active;

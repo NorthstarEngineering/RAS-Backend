@@ -1,0 +1,33 @@
+name: Terraform and authorizer validation
+
+on:
+  pull_request:
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform-validate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform-validate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+      - name: Check Terraform formatting
+        run: terraform -chdir=infra/terraform fmt -check -recursive
+      - name: Initialize without remote state
+        run: terraform -chdir=infra/terraform/dev init -backend=false
+      - name: Validate infrastructure configuration
+        run: terraform -chdir=infra/terraform/dev validate
+      - name: Test HS256 authorizer claim validation
+        run: node --test infra/terraform/dev/jwt-authorizer/jwt.test.mjs
