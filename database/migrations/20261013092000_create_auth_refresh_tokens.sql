@@ -9,11 +9,13 @@ CREATE TABLE refresh_tokens (
 );
 CREATE INDEX refresh_tokens_user_idx ON refresh_tokens (user_id);
 
+-- +goose StatementBegin
 DO $$ BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'auth_app') THEN
         EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON refresh_tokens TO auth_app';
     END IF;
 END $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP TABLE refresh_tokens;

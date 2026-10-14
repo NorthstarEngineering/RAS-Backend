@@ -46,9 +46,15 @@ func (h *Handler) create(c *gin.Context) {
 func (h *Handler) list(c *gin.Context) {
 	if c.GetString("user_role") == "BRANCH_MANAGER" {
 		id, err := uuid.Parse(c.GetString("branch_id"))
-		if err != nil { writeError(c, http.StatusForbidden, "FORBIDDEN", "operation is not permitted"); return }
+		if err != nil {
+			writeError(c, http.StatusForbidden, "FORBIDDEN", "operation is not permitted")
+			return
+		}
 		b, err := h.svc.GetByID(c.Request.Context(), id)
-		if err != nil { handleError(c, err); return }
+		if err != nil {
+			handleError(c, err)
+			return
+		}
 		c.JSON(http.StatusOK, []BranchResponse{ToResponse(b)})
 		return
 	}
@@ -72,7 +78,10 @@ func (h *Handler) get(c *gin.Context) {
 	}
 	if c.GetString("user_role") == "BRANCH_MANAGER" {
 		authorizedBranch, parseErr := uuid.Parse(c.GetString("branch_id"))
-		if parseErr != nil || authorizedBranch != id { writeError(c, http.StatusForbidden, "FORBIDDEN", "operation is not permitted"); return }
+		if parseErr != nil || authorizedBranch != id {
+			writeError(c, http.StatusForbidden, "FORBIDDEN", "operation is not permitted")
+			return
+		}
 	}
 	b, err := h.svc.GetByID(c.Request.Context(), id)
 	if err != nil {
