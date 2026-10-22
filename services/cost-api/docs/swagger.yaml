@@ -1,0 +1,103 @@
+basePath: /api/v1
+definitions:
+  cost.MenuItemCostingResponse:
+    properties:
+      components:
+        items:
+          $ref: '#/definitions/cost.RecipeComponentResponse'
+        type: array
+      cost_amount:
+        type: number
+      food_cost_pct:
+        type: number
+      gross_profit:
+        type: number
+      last_updated:
+        type: string
+      menu_item_id:
+        type: string
+      selling_price:
+        type: number
+    type: object
+  cost.RecipeComponentRequest:
+    properties:
+      good_id:
+        type: string
+      quantity:
+        type: number
+      unit:
+        type: string
+    required:
+    - good_id
+    - quantity
+    - unit
+    type: object
+  cost.RecipeComponentResponse:
+    properties:
+      good_id:
+        type: string
+      quantity:
+        type: number
+      unit:
+        type: string
+    type: object
+  cost.SetCostRequest:
+    properties:
+      components:
+        items:
+          $ref: '#/definitions/cost.RecipeComponentRequest'
+        type: array
+      cost_amount:
+        minimum: 0
+        type: number
+      menu_item_id:
+        type: string
+    required:
+    - cost_amount
+    - menu_item_id
+    type: object
+host: localhost:9007
+info:
+  contact: {}
+  description: Cost & Profitability API.
+  title: Cost API
+  version: "1.0"
+paths:
+  /cost/items:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Cost & BOM Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/cost.SetCostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Set Menu Item Cost
+      tags:
+      - Costing
+  /cost/items/{id}:
+    get:
+      parameters:
+      - description: Menu Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cost.MenuItemCostingResponse'
+      summary: Get Menu Item Costing
+      tags:
+      - Costing
+swagger: "2.0"
