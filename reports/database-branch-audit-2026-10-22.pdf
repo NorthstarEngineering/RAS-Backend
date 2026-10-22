@@ -1,0 +1,121 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 2274 >>
+stream
+BT
+/F1 11 Tf
+40 800 Td
+14 TL
+(RAS-Backend Database Connectivity & Schema Audit Report) Tj
+T*
+(Date: 2026-10-22) Tj
+T*
+(Scope: Branches created/updated in last 24 hours) Tj
+T*
+() Tj
+T*
+(Branches Reviewed:) Tj
+T*
+(1\) feature/backend-menu-api) Tj
+T*
+(2\) feature/backend-central-kitchen-supply) Tj
+T*
+(3\) feature/backend-inventory-api) Tj
+T*
+(4\) feature/backend-transfer-api) Tj
+T*
+(5\) feature/backend-sales-api) Tj
+T*
+(6\) feature/backend-cost-api) Tj
+T*
+() Tj
+T*
+(1\) Database Connectivity:) Tj
+T*
+(- Standard DB is shared PostgreSQL restaurant_db.) Tj
+T*
+(- New branches connect using DATABASE_URL.) Tj
+T*
+(- They connect to whatever DATABASE_URL points to \(not branch-pinned DB by code\).) Tj
+T*
+() Tj
+T*
+(2\) Tables/attributes in main DB:) Tj
+T*
+(- Main has: branches, users, refresh_tokens, employees, attendance_records, deductions, overtime.) Tj
+T*
+(- Missing in main central migrations: categories, menu_items, menu_item_requests,) Tj
+T*
+(  menu_item_costs, recipe_components, shifts, sales, sale_items, discounts, inventories,) Tj
+T*
+(  inventory_movements, goods, supply_requests, supply_request_items, transfers, transfer_events.) Tj
+T*
+() Tj
+T*
+(3\) Required fix:) Tj
+T*
+(- Add all new schema through central Goose migrations in /database/migrations.) Tj
+T*
+(- Stop using service-local migration histories as source of truth.) Tj
+T*
+(- Remove runtime migration execution from API startup.) Tj
+T*
+(- Add service role grants, env examples, compose/CI integration for new services.) Tj
+T*
+() Tj
+T*
+(4\) Current mistakes:) Tj
+T*
+(- No central migration files added for these six branches.) Tj
+T*
+(- Transfer depends on tables/columns not provisioned centrally.) Tj
+T*
+(- Inventory branch runs migrations at startup \(architecture mismatch\).) Tj
+T*
+(- Menu branch has import/compile issues in current snapshot.) Tj
+T*
+(- Naming/module inconsistencies in central-kitchen-supply.) Tj
+T*
+() Tj
+T*
+(5\) Extra required edits:) Tj
+T*
+(- Add migration dependency order and schema-compat CI checks.) Tj
+T*
+(- Align module/import/startup patterns with existing services.) Tj
+T*
+() Tj
+T*
+(Conclusion:) Tj
+T*
+(The six branches are not yet fully integrated with the main shared DB workflow.) Tj
+T*
+(They need central migrations + config/CI alignment before safe merge.) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+2637
+%%EOF
