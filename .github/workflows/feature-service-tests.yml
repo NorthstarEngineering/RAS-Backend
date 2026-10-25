@@ -1,0 +1,38 @@
+name: Feature service tests
+
+on:
+  pull_request:
+    paths: ["services/**", ".github/workflows/feature-service-tests.yml"]
+  push:
+    branches: [main, "feature/**"]
+    paths: ["services/**", ".github/workflows/feature-service-tests.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/cost-api/go.mod
+          cache-dependency-path: services/cost-api/go.sum
+      - name: Check formatting
+        run: test -z "$(gofmt -l services/cost-api)"
+      - name: Vet
+        working-directory: services/cost-api
+        run: go vet ./...
+      - name: Unit tests with coverage
+        working-directory: services/cost-api
+        run: go test ./... -covermode=atomic -coverprofile=coverage.out -json | tee test-results.json
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost-api-test-results-${{ github.sha }}
+          path: |
+            services/cost-api/test-results.json
+            services/cost-api/coverage.out
