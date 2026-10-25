@@ -33,7 +33,8 @@ func TestMenuRequestToResponsePreservesApprovalState(t *testing.T) {
 }
 
 func TestCategoryResponsePreservesSortOrderBoundary(t *testing.T) {
-	response := (Category{ID: "category-1", Name: "Drinks", SortOrder: 0, IsActive: true}).ToResponse()
+	category := Category{ID: "category-1", Name: "Drinks", SortOrder: 0, IsActive: true}
+	response := category.ToResponse()
 	if response.SortOrder != 0 || !response.IsActive {
 		t.Fatalf("category mapping is incorrect: %+v", response)
 	}
