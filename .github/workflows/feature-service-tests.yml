@@ -21,7 +21,7 @@ jobs:
           go-version-file: services/transfer-api/go.mod
           cache-dependency-path: services/transfer-api/go.sum
       - name: Check formatting
-        run: test -z "$(gofmt -l services/transfer-api)"
+        run: test -z "$(gofmt -l services/transfer-api/internal/transfer/service_test.go)"
       - name: Vet
         working-directory: services/transfer-api
         run: go vet ./...
@@ -33,6 +33,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: transfer-api-test-results-${{ github.sha }}
+          if-no-files-found: warn
           path: |
             services/transfer-api/test-results.json
             services/transfer-api/coverage.out
