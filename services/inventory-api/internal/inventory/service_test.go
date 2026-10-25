@@ -37,4 +37,42 @@ func TestApplyMovementHandlesReceiptsIssuesAndAdjustments(t *testing.T) {
 	}
 }
 
+func TestApplyMovementRejectsInsufficientStock(t *testing.T) {
+	_, _, err := applyMovement(decimal.NewFromInt(2), CreateMovementRequest{
+		Type: TypeOut, Quantity: decimalPointer(decimal.NewFromInt(3)),
+	})
+	if err == nil {
+		t.Fatal("expected insufficient stock error")
+	}
+}
+
+func TestApplyMovementSupportsAdjustmentDeltaAtZeroBoundary(t *testing.T) {
+	got, recorded, err := applyMovement(decimal.NewFromInt(2), CreateMovementRequest{
+		Type: TypeAdjustment, Delta: decimalPointer(decimal.NewFromInt(-2)),
+	})
+	if err != nil || !got.IsZero() || !recorded.Equal(decimal.NewFromInt(-2)) {
+		t.Fatalf("adjustment result = %s, %s, %v", got, recorded, err)
+	}
+}
+
+func TestNormalizePagingUsesDefaultsAndMaximum(t *testing.T) {
+	page, limit := NormalizePaging(0, 0)
+	if page != DefaultPage || limit != DefaultLimit {
+		t.Fatalf("defaults = %d, %d", page, limit)
+	}
+	page, limit = NormalizePaging(-1, MaxLimit+1)
+	if page != DefaultPage || limit != MaxLimit {
+		t.Fatalf("bounds = %d, %d", page, limit)
+	}
+}
+
+func TestRoleAuthorizationRules(t *testing.T) {
+	if !RoleCEO.CanAccessAllBranches() || RoleBranchManager.CanAccessAllBranches() {
+		t.Fatal("branch access scope is incorrect")
+	}
+	if !RoleCEO.CanAdjust() || !RoleBranchManager.CanAdjust() {
+		t.Fatal("adjustment permissions are incorrect")
+	}
+}
+
 func decimalPointer(value decimal.Decimal) *decimal.Decimal { return &value }
