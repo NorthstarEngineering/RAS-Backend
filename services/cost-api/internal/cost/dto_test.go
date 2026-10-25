@@ -19,14 +19,16 @@ func TestCostingResponseCalculatesProfitAndFoodCost(t *testing.T) {
 }
 
 func TestCostingResponseAvoidsDivisionByZero(t *testing.T) {
-	response := (MenuItemCost{MenuItemID: "menu-1", CostAmount: 10}).ToCostingResponse(0, nil)
+	cost := MenuItemCost{MenuItemID: "menu-1", CostAmount: 10}
+	response := cost.ToCostingResponse(0, nil)
 	if response.FoodCostPct != 0 || response.GrossProfit != -10 {
 		t.Fatalf("zero-price costing response = %+v", response)
 	}
 }
 
 func TestCostingResponseSupportsZeroCost(t *testing.T) {
-	response := (MenuItemCost{MenuItemID: "menu-1", CostAmount: 0}).ToCostingResponse(25, nil)
+	cost := MenuItemCost{MenuItemID: "menu-1", CostAmount: 0}
+	response := cost.ToCostingResponse(25, nil)
 	if response.FoodCostPct != 0 || response.GrossProfit != 25 {
 		t.Fatalf("zero-cost response = %+v", response)
 	}
@@ -34,7 +36,8 @@ func TestCostingResponseSupportsZeroCost(t *testing.T) {
 
 func TestCostingResponsePreservesComponentOrder(t *testing.T) {
 	components := []*RecipeComponent{{GoodID: "good-1", Quantity: 1, Unit: "kg"}, {GoodID: "good-2", Quantity: 0.5, Unit: "l"}}
-	response := (MenuItemCost{MenuItemID: "menu-1", CostAmount: 5}).ToCostingResponse(10, components)
+	cost := MenuItemCost{MenuItemID: "menu-1", CostAmount: 5}
+	response := cost.ToCostingResponse(10, components)
 	if len(response.Components) != 2 || response.Components[0].GoodID != "good-1" || response.Components[1].GoodID != "good-2" {
 		t.Fatalf("component order was not preserved: %+v", response.Components)
 	}
@@ -42,7 +45,8 @@ func TestCostingResponsePreservesComponentOrder(t *testing.T) {
 
 func TestCostingResponseUsesUTCForLastUpdated(t *testing.T) {
 	localTime := time.Date(2026, 10, 25, 3, 0, 0, 0, time.FixedZone("test", 3*60*60))
-	response := (MenuItemCost{UpdatedAt: localTime}).ToCostingResponse(10, nil)
+	cost := MenuItemCost{UpdatedAt: localTime}
+	response := cost.ToCostingResponse(10, nil)
 	if response.LastUpdated != "2026-10-25T00:00:00Z" {
 		t.Fatalf("LastUpdated = %q", response.LastUpdated)
 	}
