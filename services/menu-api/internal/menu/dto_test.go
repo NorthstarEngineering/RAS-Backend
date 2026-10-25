@@ -42,7 +42,8 @@ func TestCategoryResponsePreservesSortOrderBoundary(t *testing.T) {
 
 func TestMenuItemToResponseFormatsUTC(t *testing.T) {
 	localTime := time.Date(2026, 10, 25, 3, 0, 0, 0, time.FixedZone("test", 3*60*60))
-	response := (MenuItem{CreatedAt: localTime, UpdatedAt: localTime}).ToResponse()
+	item := MenuItem{CreatedAt: localTime, UpdatedAt: localTime}
+	response := item.ToResponse()
 	if response.CreatedAt != "2026-10-25T00:00:00Z" || response.UpdatedAt != "2026-10-25T00:00:00Z" {
 		t.Fatalf("timestamps were not normalized to UTC: %+v", response)
 	}
