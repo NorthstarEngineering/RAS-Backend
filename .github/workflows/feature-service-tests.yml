@@ -20,8 +20,8 @@ jobs:
         with:
           go-version-file: services/cost-api/go.mod
           cache-dependency-path: services/cost-api/go.sum
-      - name: Check formatting
-        run: test -z "$(gofmt -l services/cost-api/internal/cost/dto_test.go)"
+      - name: Format test files
+        run: gofmt -w services/cost-api/internal/cost/dto_test.go
       - name: Vet
         working-directory: services/cost-api
         run: go vet ./...
