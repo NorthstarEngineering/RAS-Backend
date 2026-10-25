@@ -8,8 +8,9 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
-	_ "github.com/NorthstarEngineering/RAS-Backend/services/menu-api/docs" // ← ضيفي ده	"github.com/gin-gonic/gin"
+	_ "github.com/NorthstarEngineering/RAS-Backend/services/menu-api/docs"
 	"github.com/NorthstarEngineering/RAS-Backend/services/menu-api/internal/menu"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
@@ -24,10 +25,10 @@ const (
 
 func main() {
 	dbURL := os.Getenv("DATABASE_URL")
-if dbURL == "" {
-	log.Fatal("DATABASE_URL is not set")
-}
-db, err := sqlx.Connect("postgres", dbURL)
+	if dbURL == "" {
+		log.Fatal("DATABASE_URL is not set")
+	}
+	db, err := sqlx.Connect("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
