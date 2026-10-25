@@ -16,7 +16,8 @@ func TestMenuItemToResponsePreservesPublicFields(t *testing.T) {
 }
 
 func TestMenuItemToResponseKeepsOptionalFieldsNil(t *testing.T) {
-	response := (MenuItem{ID: "item-1", SKU: "SKU-1", Name: "Item", SellingPrice: 0}).ToResponse()
+	item := MenuItem{ID: "item-1", SKU: "SKU-1", Name: "Item", SellingPrice: 0}
+	response := item.ToResponse()
 	if response.NameEn != nil || response.CategoryID != nil || response.KDSStation != nil || response.PrepTimeMinutes != nil || response.Description != nil {
 		t.Fatalf("optional fields should remain nil: %+v", response)
 	}
