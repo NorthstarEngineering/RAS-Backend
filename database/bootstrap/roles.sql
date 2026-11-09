@@ -19,6 +19,14 @@ SELECT format('ALTER ROLE attendance_app WITH LOGIN PASSWORD %L', :'attendance_p
 \gexec
 ALTER ROLE attendance_app NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 5;
 
+-- أضفنا الـ Menu App هنا
+SELECT format('CREATE ROLE menu_app LOGIN PASSWORD %L', :'menu_password')
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'menu_app')
+\gexec
+SELECT format('ALTER ROLE menu_app WITH LOGIN PASSWORD %L', :'menu_password')
+\gexec
+ALTER ROLE menu_app NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 5;
+
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-GRANT USAGE ON SCHEMA public TO auth_app, branch_app, attendance_app;
-GRANT CONNECT ON DATABASE restaurant_db TO auth_app, branch_app, attendance_app;
+GRANT USAGE ON SCHEMA public TO auth_app, branch_app, attendance_app, menu_app;
+GRANT CONNECT ON DATABASE restaurant_db TO auth_app, branch_app, attendance_app, menu_app;
