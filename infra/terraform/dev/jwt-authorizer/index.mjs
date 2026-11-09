@@ -1,13 +1,14 @@
-import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 import { parseAndVerify } from "./jwt.mjs";
-const secrets = new SecretsManagerClient({});
+const ssm = new SSMClient({});
 let secretValue;
 let secretLoadedAt = 0;
 
 async function loadSigningSecret() {
   if (secretValue && Date.now() - secretLoadedAt < 60_000) return secretValue;
-  const result = await secrets.send(new GetSecretValueCommand({ SecretId: process.env.JWT_SECRET_ARN }));
-  const value = result.SecretString;
+  const result = await ssm.send(new GetParameterCommand({ Name: process.env.APP_SECRET_PARAMETER_NAME, WithDecryption: true }));
+  let value;
+  try { value = JSON.parse(result.Parameter?.Value || "").JWT_SECRET; } catch { value = undefined; }
   if (typeof value !== "string" || value.length < 32) {
     throw new Error("JWT signing secret is not configured");
   }
