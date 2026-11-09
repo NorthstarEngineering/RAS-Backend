@@ -1,0 +1,66 @@
+name: Go tests and bug report
+
+on:
+  pull_request:
+    paths:
+      - "services/**"
+      - "scripts/generate-go-test-report.py"
+      - ".github/workflows/go-test-report.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/**"
+      - "scripts/generate-go-test-report.py"
+      - ".github/workflows/go-test-report.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  go-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.27.x"
+          cache: false
+      - name: Run all Go module tests with coverage
+        id: tests
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p test-results
+          status=0
+          index=0
+          while IFS= read -r module; do
+            module_dir="$(dirname "$module")"
+            module_name="$(basename "$module_dir")"
+            result="test-results/${index}-${module_name}.json"
+            coverage="test-results/${index}-${module_name}.out"
+            echo "Testing ${module_dir}"
+            (
+              cd "$module_dir"
+              go test ./... -covermode=atomic -coverprofile="$GITHUB_WORKSPACE/$coverage" -json > "$GITHUB_WORKSPACE/$result"
+            ) || status=1
+            index=$((index + 1))
+          done < <(find services -name go.mod -not -path '*/.tools/*' | sort)
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+        continue-on-error: true
+      - name: Generate professional test report
+        if: always()
+        run: |
+          python scripts/generate-go-test-report.py test-results test-results/*.json
+        continue-on-error: true
+      - name: Upload test results and bug report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-test-results-${{ github.sha }}
+          path: test-results/
+          if-no-files-found: error
+      - name: Fail when tests fail
+        if: steps.tests.outputs.status != '0'
+        run: exit 1
