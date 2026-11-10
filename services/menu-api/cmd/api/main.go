@@ -34,7 +34,7 @@ func main() {
 	dbName := getEnv("DB_NAME", "restaurant_db")
 	dbUser := getEnv("DB_USER", "postgres")
 	dbPass := getEnv("DB_PASSWORD", "Postgres@123")
-	
+
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
 
 	db, err := sqlx.Connect("postgres", dbURL)

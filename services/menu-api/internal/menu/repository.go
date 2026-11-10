@@ -29,7 +29,6 @@ type Repository interface {
 	GetMenuItemRequestByID(ctx context.Context, id string) (*MenuItemRequest, error)
 	ListMenuItemRequests(ctx context.Context) ([]*MenuItemRequest, error)
 	UpdateMenuItemRequest(ctx context.Context, tx *sqlx.Tx, req *MenuItemRequest) error
-	
 }
 
 // ============================================================
@@ -207,6 +206,5 @@ func (r *postgresRepo) UpdateMenuItemRequest(ctx context.Context, tx *sqlx.Tx, r
 	}
 	return nil
 }
-
 
 var _ Repository = (*postgresRepo)(nil)
