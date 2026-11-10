@@ -37,12 +37,13 @@ services:
     volumes:
       - ../database/bootstrap/roles.sql:/bootstrap/roles.sql:ro
     entrypoint: ["/bin/sh", "-ec"]
-    command: >-
-      psql -v ON_ERROR_STOP=1
-      -v auth_password="$${AUTH_DB_PASSWORD}"
-      -v branch_password="$${BRANCH_DB_PASSWORD}"
-      -v attendance_password="$${ATTENDANCE_DB_PASSWORD}"
-      -f /bootstrap/roles.sql
+    command:
+      - >-
+        exec psql -v ON_ERROR_STOP=1
+        -v auth_password="$${AUTH_DB_PASSWORD}"
+        -v branch_password="$${BRANCH_DB_PASSWORD}"
+        -v attendance_password="$${ATTENDANCE_DB_PASSWORD}"
+        -f /bootstrap/roles.sql
     restart: "no"
 
   migrate:

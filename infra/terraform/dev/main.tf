@@ -45,20 +45,40 @@ module "database" {
   application_security_group_id = module.network.application_security_group_id
   database_name                 = var.database_name
   master_username               = var.database_master_username
+  master_password               = var.database_master_password
   instance_class                = var.database_instance_class
   engine_version                = var.database_engine_version
   allocated_storage_gib         = var.database_allocated_storage_gib
   backup_retention_days         = var.database_backup_retention_days
+  protect_database              = var.protect_database
+}
+
+resource "aws_ssm_parameter" "application_secrets" {
+  name        = "/ras-backend/dev/application-secrets"
+  description = "Development runtime credentials for the three backend applications and JWT authorizer"
+  type        = "SecureString"
+  tier        = "Standard"
+  value       = var.app_secret_json
+  tags        = { Environment = "development", DataClass = "secret" }
 }
 
 module "application" {
-  source                        = "../modules/application"
-  name                          = "ras-backend"
-  ami_id                        = data.aws_ami.ubuntu.id
-  instance_type                 = var.application_instance_type
-  private_subnet_id             = module.network.private_subnet_ids[0]
-  application_security_group_id = module.network.application_security_group_id
-  app_secret_arn                = var.app_secret_arn
-  database_master_secret_arn    = module.database.master_secret_arn
-  deploy_script_content         = file("${path.module}/../../../deploy/aws-dev-deploy.sh")
+  source                                  = "../modules/application"
+  name                                    = "ras-backend"
+  ami_id                                  = data.aws_ami.ubuntu.id
+  instance_type                           = var.application_instance_type
+  public_subnet_id                        = module.network.public_subnet_ids[0]
+  application_security_group_id           = module.network.application_security_group_id
+  app_secret_parameter_name               = aws_ssm_parameter.application_secrets.name
+  app_secret_parameter_arn                = aws_ssm_parameter.application_secrets.arn
+  database_master_password_parameter_name = module.database.master_password_parameter_name
+  database_master_password_parameter_arn  = module.database.master_password_parameter_arn
+  database_master_username                = var.database_master_username
+  database_endpoint                       = module.database.endpoint
+  database_name                           = module.database.database_name
+  aws_region                              = var.aws_region
+  ssh_allowed_cidr                        = var.ssh_allowed_cidr
+  ec2_instance_connect_cidr               = var.ec2_instance_connect_cidr
+  ssh_key_name                            = var.ssh_key_name
+  deploy_script_content                   = file("${path.module}/../../../deploy/aws-dev-deploy.sh")
 }

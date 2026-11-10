@@ -12,7 +12,7 @@ Branch and Attendance now verify signed Bearer JWTs locally. They do not trust `
 - Access tokens are stateless and remain valid until expiry after account disablement or refresh-token revocation (maximum 15 minutes under current defaults).
 - Password reset via OTP, account recovery, MFA, and audit-log storage are not implemented.
 - The API Gateway and Lambda authorizer are Terraform-defined but not deployed. Gateway must not trust caller identity headers.
-- No CORS policy is configured for the native mobile app by default; add exact origins if browser clients are introduced.
+- Browser clients must use exact allowed origins. The development API currently allows `http://localhost:5173` and `http://127.0.0.1:5173`; production origins must be configured explicitly rather than using a wildcard.
 
 ## AWS edge authentication (Terraform-defined, not deployed)
 
