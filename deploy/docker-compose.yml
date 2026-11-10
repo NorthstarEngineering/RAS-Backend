@@ -35,16 +35,19 @@ services:
       BRANCH_DB_PASSWORD: ${BRANCH_DB_PASSWORD:?Set BRANCH_DB_PASSWORD in .env}
       ATTENDANCE_DB_PASSWORD: ${ATTENDANCE_DB_PASSWORD:?Set ATTENDANCE_DB_PASSWORD in .env}
       MENU_DB_PASSWORD: ${MENU_DB_PASSWORD:?Set MENU_DB_PASSWORD in .env}
+      SALES_DB_PASSWORD: ${SALES_DB_PASSWORD:?Set SALES_DB_PASSWORD in .env}
     volumes:
       - ../database/bootstrap/roles.sql:/bootstrap/roles.sql:ro
     entrypoint: ["/bin/sh", "-ec"]
-    command: >-
-      psql -v ON_ERROR_STOP=1
-      -v auth_password="$${AUTH_DB_PASSWORD}"
-      -v branch_password="$${BRANCH_DB_PASSWORD}"
-      -v attendance_password="$${ATTENDANCE_DB_PASSWORD}"
-      -v menu_password="$${MENU_DB_PASSWORD}"
-      -f /bootstrap/roles.sql
+    command:
+      - >-
+        exec psql -v ON_ERROR_STOP=1
+        -v auth_password="$${AUTH_DB_PASSWORD}"
+        -v branch_password="$${BRANCH_DB_PASSWORD}"
+        -v attendance_password="$${ATTENDANCE_DB_PASSWORD}"
+        -v menu_password="$${MENU_DB_PASSWORD}"
+        -v sales_password="$${SALES_DB_PASSWORD}"
+        -f /bootstrap/roles.sql
     restart: "no"
 
   migrate:

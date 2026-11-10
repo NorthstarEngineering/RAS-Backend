@@ -4,7 +4,16 @@ variable "private_subnet_ids" { type = list(string) }
 variable "application_security_group_id" { type = string }
 variable "database_name" { type = string }
 variable "master_username" { type = string }
+variable "master_password" {
+  type      = string
+  sensitive = true
+}
 variable "instance_class" { type = string }
 variable "engine_version" { type = string }
 variable "allocated_storage_gib" { type = number }
 variable "backup_retention_days" { type = number }
+variable "protect_database" {
+  type        = bool
+  description = "Prevent Terraform from deleting the development database."
+  default     = true
+}

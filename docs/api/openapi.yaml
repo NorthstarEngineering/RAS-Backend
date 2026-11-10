@@ -4,13 +4,12 @@ info:
   version: 1.0.0
   description: >-
     Source-derived handoff for the existing Auth, Branch, and Attendance APIs.
-    The API Gateway server is a placeholder and is not deployed. Endpoint status
-    and deployment or verification gaps are stated per operation.
+    The eu-west-3 development API Gateway is currently deployed. This temporary environment may be stopped or destroyed; no production server is available. Endpoint verification status is stated per operation.
 servers:
   - url: http://localhost:9001/api/v1
     description: Local Auth API (direct service access; no API Gateway)
-  - url: https://api-gateway-domain.example/stage/api/v1
-    description: Future API Gateway; pending deployment and path mapping verification
+  - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev
+    description: Deployed development API Gateway (eu-west-3, checked 2026-10-14; temporary environment)
 tags:
   - name: Auth
     description: Login, sessions, and account self-service
@@ -40,7 +39,7 @@ paths:
           description: Branch API
         - url: http://localhost:9003
           description: Attendance API
-      x-implementation-status: implemented for each local API; Gateway routing pending
+      x-implementation-status: implemented for local APIs; development Gateway health route smoke-tested 2026-10-14
       responses:
         '200':
           description: Service is responding
@@ -259,9 +258,9 @@ paths:
       servers:
         - url: http://localhost:9002/api/v1
           description: Local Branch API
-        - url: https://api-gateway-domain.example/stage/api/v1
-          description: Future gateway; pending
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+          description: Deployed development API Gateway; temporary environment
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       responses:
         '200':
           description: Branch list; Branch Manager receives only their assigned branch
@@ -276,8 +275,8 @@ paths:
       summary: Create branch (CEO)
       servers:
         - url: http://localhost:9002/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       requestBody:
         required: true
         content:
@@ -300,8 +299,8 @@ paths:
       summary: Get a branch (CEO or own-branch Manager)
       servers:
         - url: http://localhost:9002/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters: [{$ref: '#/components/parameters/UUIDPath'}]
       responses:
         '200':
@@ -318,8 +317,8 @@ paths:
       summary: Update branch (CEO)
       servers:
         - url: http://localhost:9002/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters: [{$ref: '#/components/parameters/UUIDPath'}]
       requestBody:
         required: true
@@ -343,8 +342,8 @@ paths:
       summary: List employees
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       description: CEO may filter branch_id; Branch Manager results are scoped to token branch. active=true filters active employees.
       parameters:
         - {name: branch_id, in: query, required: false, schema: {type: string, format: uuid}, description: CEO branch filter}
@@ -368,8 +367,8 @@ paths:
       summary: Create employee (CEO or Branch Manager)
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       description: CEO chooses branch_id. Service code overrides it with authenticated branch for Branch Managers.
       requestBody:
         required: true
@@ -393,8 +392,8 @@ paths:
       summary: Get employee by ID
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters: [{$ref: '#/components/parameters/UUIDPath'}]
       responses:
         '200':
@@ -410,8 +409,8 @@ paths:
       summary: Update employee (branch cannot be reassigned through this operation)
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters: [{$ref: '#/components/parameters/UUIDPath'}]
       requestBody:
         required: true
@@ -434,8 +433,8 @@ paths:
       summary: Change employee payment (CEO or own-branch Manager)
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters: [{$ref: '#/components/parameters/UUIDPath'}]
       requestBody:
         required: true
@@ -458,8 +457,8 @@ paths:
       summary: Terminate employee (CEO or own-branch Manager)
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters: [{$ref: '#/components/parameters/UUIDPath'}]
       requestBody:
         required: true
@@ -486,8 +485,8 @@ paths:
       summary: Record employee check-in
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       description: CEO may act across branches; Branch Manager must match the employee branch in the verified token.
       requestBody:
         required: true
@@ -516,8 +515,8 @@ paths:
       summary: Record employee check-out
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://api-gateway-domain.example/stage/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       description: CEO may act across branches; Branch Manager must match the employee branch in the verified token.
       requestBody:
         required: true
@@ -543,8 +542,8 @@ paths:
       summary: Adjust or cancel a deduction
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://<api-gateway-domain>/<stage>/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters: [{$ref: '#/components/parameters/UUIDPath'}]
       requestBody:
         required: true
@@ -574,8 +573,8 @@ paths:
       summary: List overtime records
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://<api-gateway-domain>/<stage>/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters:
         - {name: employee_id, in: query, schema: {type: string, format: uuid}}
         - {name: status, in: query, schema: {type: string, enum: [pending, approved, rejected]}}
@@ -601,8 +600,8 @@ paths:
       summary: Create overtime record
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://<api-gateway-domain>/<stage>/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       requestBody:
         required: true
         content:
@@ -632,8 +631,8 @@ paths:
       summary: Get overtime record
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://<api-gateway-domain>/<stage>/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters: [{$ref: '#/components/parameters/UUIDPath'}]
       responses:
         '200':
@@ -650,8 +649,8 @@ paths:
       summary: Approve overtime
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://<api-gateway-domain>/<stage>/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters: [{$ref: '#/components/parameters/UUIDPath'}]
       responses:
         '200':
@@ -669,8 +668,8 @@ paths:
       summary: Reject overtime
       servers:
         - url: http://localhost:9003/api/v1
-        - url: https://<api-gateway-domain>/<stage>/api/v1
-      x-implementation-status: implemented; gateway routing pending
+        - url: https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1
+      x-implementation-status: implemented; development Gateway route smoke-tested 2026-10-14
       parameters: [{$ref: '#/components/parameters/UUIDPath'}]
       requestBody:
         required: true
