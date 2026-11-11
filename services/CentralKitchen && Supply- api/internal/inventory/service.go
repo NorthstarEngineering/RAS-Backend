@@ -148,16 +148,31 @@ func (s *Service) CreateGood(ctx context.Context, in CreateGoodInput) (*Good, er
 	now := time.Now().UTC()
 	goodID := uuid.NewString()
 
+	var categoryPtr *string
+	if in.Category != "" {
+		categoryPtr = &in.Category
+	}
+
+	var descriptionPtr *string
+	if in.Description != "" {
+		descriptionPtr = &in.Description
+	}
+
+	var maxCapacityPtr *float64
+	if in.MaxCapacity > 0 {
+		maxCapacityPtr = &in.MaxCapacity
+	}
+
 	g := &Good{
 		ID:           goodID,
 		SKU:          in.SKU,
 		Name:         in.Name,
-		Category:     in.Category,
-		Description:  in.Description,
+		Category:     categoryPtr,
+		Description:  descriptionPtr,
 		Unit:         in.Unit,
 		UnitCost:     in.UnitCost,
 		ReorderLevel: in.ReorderLevel,
-		MaxCapacity:  in.MaxCapacity,
+		MaxCapacity:  maxCapacityPtr,
 		IsActive:     true,
 		CreatedAt:    now,
 		UpdatedAt:    now,
