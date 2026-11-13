@@ -34,6 +34,7 @@ services:
       AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:?Set AUTH_DB_PASSWORD in .env}
       BRANCH_DB_PASSWORD: ${BRANCH_DB_PASSWORD:?Set BRANCH_DB_PASSWORD in .env}
       ATTENDANCE_DB_PASSWORD: ${ATTENDANCE_DB_PASSWORD:?Set ATTENDANCE_DB_PASSWORD in .env}
+      INVENTORY_DB_PASSWORD: ${INVENTORY_DB_PASSWORD:?Set INVENTORY_DB_PASSWORD in .env}
     volumes:
       - ../database/bootstrap/roles.sql:/bootstrap/roles.sql:ro
     entrypoint: ["/bin/sh", "-ec"]
@@ -43,6 +44,7 @@ services:
         -v auth_password="$${AUTH_DB_PASSWORD}"
         -v branch_password="$${BRANCH_DB_PASSWORD}"
         -v attendance_password="$${ATTENDANCE_DB_PASSWORD}"
+        -v inventory_password="$${INVENTORY_DB_PASSWORD}"
         -f /bootstrap/roles.sql
     restart: "no"
 

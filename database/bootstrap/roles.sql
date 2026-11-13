@@ -19,6 +19,12 @@ SELECT format('ALTER ROLE attendance_app WITH LOGIN PASSWORD %L', :'attendance_p
 \gexec
 ALTER ROLE attendance_app CONNECTION LIMIT 5;
 
+SELECT format('CREATE ROLE inventory_app LOGIN PASSWORD %L', :'inventory_password')
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'inventory_app')
+\gexec
+SELECT format('ALTER ROLE inventory_app WITH LOGIN PASSWORD %L', :'inventory_password')
+\gexec
+ALTER ROLE inventory_app NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 5;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-GRANT USAGE ON SCHEMA public TO auth_app, branch_app, attendance_app;
-GRANT CONNECT ON DATABASE restaurant_db TO auth_app, branch_app, attendance_app;
+GRANT USAGE ON SCHEMA public TO auth_app, branch_app, attendance_app, inventory_app;
+GRANT CONNECT ON DATABASE restaurant_db TO auth_app, branch_app, attendance_app, inventory_app;
