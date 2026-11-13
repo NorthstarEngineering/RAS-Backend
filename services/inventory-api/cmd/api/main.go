@@ -1,11 +1,16 @@
 package main
+
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -15,16 +20,15 @@ import (
 
 	"inventory-api/internal/inventory"
 	"inventory-api/migrations"
-	
 )
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	port := getEnv("PORT", "8080")
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		logger.Error("DATABASE_URL is required")
+	dsn, err := buildDBURL()
+	if err != nil {
+		logger.Error("database config missing", "error", err)
 		os.Exit(1)
 	}
 	if mode := os.Getenv("GIN_MODE"); mode != "" {
@@ -101,4 +105,22 @@ func getEnv(k, def string) string {
 		return v
 	}
 	return def
+}
+
+func buildDBURL() (string, error) {
+	if value := strings.TrimSpace(os.Getenv("DATABASE_URL")); value != "" {
+		return value, nil
+	}
+	host, port, user, password, name := os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME")
+	if host == "" || port == "" || user == "" || password == "" || name == "" {
+		return "", fmt.Errorf("set DATABASE_URL or all DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME values")
+	}
+	u := url.URL{Scheme: "postgres", User: url.UserPassword(user, password), Host: net.JoinHostPort(host, port), Path: name}
+	q := u.Query()
+	q.Set("sslmode", os.Getenv("DB_SSLMODE"))
+	if q.Get("sslmode") == "" {
+		q.Set("sslmode", "disable")
+	}
+	u.RawQuery = q.Encode()
+	return u.String(), nil
 }
