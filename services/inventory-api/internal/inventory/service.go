@@ -292,7 +292,7 @@ func applyMovement(current decimal.Decimal, req CreateMovementRequest) (newQty, 
 			if next.GreaterThan(maxAmount) {
 				return decimal.Zero, decimal.Zero, ErrQuantityTooLarge
 			}
-			return next, *req.Delta, nil
+			return next, next, nil
 		}
 		return *req.Quantity, *req.Quantity, nil // absolute resulting quantity
 
