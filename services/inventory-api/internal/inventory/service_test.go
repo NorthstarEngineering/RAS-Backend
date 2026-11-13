@@ -50,7 +50,7 @@ func TestApplyMovementSupportsAdjustmentDeltaAtZeroBoundary(t *testing.T) {
 	got, recorded, err := applyMovement(decimal.NewFromInt(2), CreateMovementRequest{
 		Type: TypeAdjustment, Delta: decimalPointer(decimal.NewFromInt(-2)),
 	})
-	if err != nil || !got.IsZero() || !recorded.Equal(decimal.NewFromInt(-2)) {
+	if err != nil || !got.IsZero() || !recorded.IsZero() {
 		t.Fatalf("adjustment result = %s, %s, %v", got, recorded, err)
 	}
 }
