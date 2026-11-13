@@ -31,3 +31,5 @@ jobs:
         run: terraform -chdir=infra/terraform/dev validate
       - name: Test HS256 authorizer claim validation
         run: node --test infra/terraform/dev/jwt-authorizer/jwt.test.mjs
+      - name: Test API request proxy routing and error handling
+        run: node --test infra/terraform/dev/request-proxy.test.mjs

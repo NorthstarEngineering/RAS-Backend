@@ -1,11 +1,35 @@
 {
-  "name": "RAS Backend - local placeholders",
+  "name": "RAS Backend - development",
   "values": [
-    {"key": "authBaseUrl", "value": "http://localhost:9001/api/v1", "enabled": true},
-    {"key": "branchBaseUrl", "value": "http://localhost:9002/api/v1", "enabled": true},
-    {"key": "attendanceBaseUrl", "value": "http://localhost:9003/api/v1", "enabled": true},
-    {"key": "apiGatewayBaseUrl", "value": "https://<api-gateway-domain>/<stage>", "enabled": false},
-    {"key": "accessToken", "value": "", "enabled": false},
-    {"key": "refreshToken", "value": "", "enabled": false}
+    {
+      "key": "apiGatewayBaseUrl",
+      "value": "https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev",
+      "enabled": true
+    },
+    {
+      "key": "authBaseUrl",
+      "value": "https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1",
+      "enabled": true
+    },
+    {
+      "key": "branchBaseUrl",
+      "value": "https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1",
+      "enabled": true
+    },
+    {
+      "key": "attendanceBaseUrl",
+      "value": "https://jo3c9na8mg.execute-api.eu-west-3.amazonaws.com/dev/api/v1",
+      "enabled": true
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "enabled": false
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "enabled": false
+    }
   ]
 }
