@@ -34,6 +34,9 @@ services:
       AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:?Set AUTH_DB_PASSWORD in .env}
       BRANCH_DB_PASSWORD: ${BRANCH_DB_PASSWORD:?Set BRANCH_DB_PASSWORD in .env}
       ATTENDANCE_DB_PASSWORD: ${ATTENDANCE_DB_PASSWORD:?Set ATTENDANCE_DB_PASSWORD in .env}
+      MENU_DB_PASSWORD: ${MENU_DB_PASSWORD:?Set MENU_DB_PASSWORD in .env}
+      SALES_DB_PASSWORD: ${SALES_DB_PASSWORD:?Set SALES_DB_PASSWORD in .env}
+      INVENTORY_DB_PASSWORD: ${INVENTORY_DB_PASSWORD:?Set INVENTORY_DB_PASSWORD in .env}
     volumes:
       - ../database/bootstrap/roles.sql:/bootstrap/roles.sql:ro
     entrypoint: ["/bin/sh", "-ec"]
@@ -43,6 +46,9 @@ services:
         -v auth_password="$${AUTH_DB_PASSWORD}"
         -v branch_password="$${BRANCH_DB_PASSWORD}"
         -v attendance_password="$${ATTENDANCE_DB_PASSWORD}"
+        -v menu_password="$${MENU_DB_PASSWORD}"
+        -v sales_password="$${SALES_DB_PASSWORD}"
+        -v inventory_password="$${INVENTORY_DB_PASSWORD}"
         -f /bootstrap/roles.sql
     restart: "no"
 
@@ -140,6 +146,81 @@ services:
     ports: ["9003:9003"]
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9003/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  menu-api:
+    build:
+      context: ../services/menu-api
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: "9005"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-restaurant_db}
+      DB_USER: menu_app
+      DB_PASSWORD: ${MENU_DB_PASSWORD:?Set MENU_DB_PASSWORD in .env}
+      DB_SSLMODE: disable
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    ports: ["9005:9005"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9005/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  sales-api:
+    build:
+      context: ../services/sales-api
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: "9006"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-restaurant_db}
+      DB_USER: sales_app
+      DB_PASSWORD: ${SALES_DB_PASSWORD:?Set SALES_DB_PASSWORD in .env}
+      DB_SSLMODE: disable
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    ports: ["9006:9006"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9006/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  inventory-api:
+    build:
+      context: "../services/CentralKitchen && Supply- api"
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: "9004"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-restaurant_db}
+      DB_USER: inventory_app
+      DB_PASSWORD: ${INVENTORY_DB_PASSWORD:?Set INVENTORY_DB_PASSWORD in .env}
+      DB_SSLMODE: disable
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    ports: ["9004:9004"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9004/health"]
       interval: 10s
       timeout: 3s
       retries: 5
