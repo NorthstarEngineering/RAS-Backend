@@ -1,0 +1,307 @@
+basePath: /api/v1
+definitions:
+  sales.CancelDiscountRequest:
+    properties:
+      reason:
+        type: string
+    required:
+    - reason
+    type: object
+  sales.ChannelSummary:
+    properties:
+      channel:
+        type: string
+      order_count:
+        type: integer
+      total_sales:
+        type: number
+    type: object
+  sales.CreateDiscountRequest:
+    properties:
+      amount:
+        type: number
+      reason:
+        type: string
+      shift_id:
+        type: string
+    required:
+    - amount
+    - reason
+    - shift_id
+    type: object
+  sales.DiscountResponse:
+    properties:
+      amount:
+        type: number
+      canceled_reason:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      reason:
+        type: string
+      shift_id:
+        type: string
+      status:
+        type: string
+    type: object
+  sales.ItemSummary:
+    properties:
+      item_name:
+        type: string
+      menu_item_id:
+        type: string
+      total_quantity:
+        type: number
+      total_sales:
+        type: number
+    type: object
+  sales.OpenShiftRequest:
+    properties:
+      branch_id:
+        type: string
+      manager_id:
+        type: string
+      opening_float:
+        type: number
+    required:
+    - branch_id
+    - manager_id
+    type: object
+  sales.RecordSaleRequest:
+    properties:
+      channel:
+        enum:
+        - RESTAURANT
+        - DELIVERY
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/sales.SaleItemRequest'
+        minItems: 1
+        type: array
+      shift_id:
+        type: string
+    required:
+    - channel
+    - items
+    - shift_id
+    type: object
+  sales.SaleItemRequest:
+    properties:
+      menu_item_id:
+        type: string
+      quantity:
+        type: number
+    required:
+    - menu_item_id
+    - quantity
+    type: object
+  sales.SaleItemResponse:
+    properties:
+      menu_item_id:
+        type: string
+      quantity:
+        type: number
+      total_price:
+        type: number
+      unit_price:
+        type: number
+    type: object
+  sales.SaleResponse:
+    properties:
+      channel:
+        type: string
+      created_at:
+        type: string
+      discount_amount:
+        type: number
+      gross_amount:
+        type: number
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/sales.SaleItemResponse'
+        type: array
+      net_amount:
+        type: number
+      shift_id:
+        type: string
+    type: object
+  sales.ShiftResponse:
+    properties:
+      branch_id:
+        type: string
+      closed_at:
+        type: string
+      id:
+        type: string
+      manager_id:
+        type: string
+      opened_at:
+        type: string
+      opening_float:
+        type: number
+      status:
+        type: string
+    type: object
+  sales.ShiftSummaryResponse:
+    properties:
+      channels:
+        items:
+          $ref: '#/definitions/sales.ChannelSummary'
+        type: array
+      gross_sales:
+        type: number
+      items:
+        items:
+          $ref: '#/definitions/sales.ItemSummary'
+        type: array
+      net_sales:
+        type: number
+      shift_id:
+        type: string
+      status:
+        type: string
+      total_discounts:
+        type: number
+      total_orders:
+        type: integer
+    type: object
+host: localhost:9006
+info:
+  contact: {}
+  description: Sales, Shifts, and Discounts API for Restaurant Branch Management.
+  title: Sales API
+  version: "1.0"
+paths:
+  /sales:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Sale Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/sales.RecordSaleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sales.SaleResponse'
+      summary: Record Sale
+      tags:
+      - Sales
+  /sales/discounts:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Discount Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/sales.CreateDiscountRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sales.DiscountResponse'
+      summary: Create Discount
+      tags:
+      - Discounts
+  /sales/discounts/{id}/cancel:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Discount ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Cancel Reason
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/sales.CancelDiscountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sales.DiscountResponse'
+      summary: Cancel Discount
+      tags:
+      - Discounts
+  /sales/shifts/{id}/close:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Shift ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sales.ShiftResponse'
+      summary: Close Shift
+      tags:
+      - Shifts
+  /sales/shifts/{id}/summary:
+    get:
+      parameters:
+      - description: Shift ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sales.ShiftSummaryResponse'
+      summary: Get Shift Summary
+      tags:
+      - Shifts
+  /sales/shifts/open:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Open Shift Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/sales.OpenShiftRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sales.ShiftResponse'
+      summary: Open Shift
+      tags:
+      - Shifts
+swagger: "2.0"
