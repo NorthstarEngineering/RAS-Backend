@@ -3,10 +3,14 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -18,9 +22,9 @@ import (
 )
 
 func main() {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		log.Fatal("DATABASE_URL is required")
+	dsn, err := buildDBURL()
+	if err != nil {
+		log.Fatal(err)
 	}
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -65,4 +69,21 @@ func main() {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("shutdown: %v", err)
 	}
+}
+func buildDBURL() (string, error) {
+if value := strings.TrimSpace(os.Getenv("DATABASE_URL")); value != "" {
+return value, nil
+}
+host, port, user, password, name := os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME")
+if host == "" || port == "" || user == "" || password == "" || name == "" {
+return "", fmt.Errorf("set DATABASE_URL or all DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME values")
+}
+u := url.URL{Scheme: "postgres", User: url.UserPassword(user, password), Host: net.JoinHostPort(host, port), Path: name}
+q := u.Query()
+q.Set("sslmode", os.Getenv("DB_SSLMODE"))
+if q.Get("sslmode") == "" {
+q.Set("sslmode", "disable")
+}
+u.RawQuery = q.Encode()
+return u.String(), nil
 }
