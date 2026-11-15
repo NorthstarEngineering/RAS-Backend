@@ -1,0 +1,47 @@
+=== services\attendance-api ===
+?   	restaurant-api/cmd/api	[no test files]
+?   	restaurant-api/docs	[no test files]
+ok  	restaurant-api/internal/attendance	(cached)
+ok  	restaurant-api/internal/authn	(cached)
+ok  	restaurant-api/internal/employee	(cached)
+ok  	restaurant-api/internal/overtime	(cached)
+=== services\auth-api ===
+?   	restaurant-backend/cmd/api	[no test files]
+?   	restaurant-backend/internal/auth	[no test files]
+?   	restaurant-backend/internal/auth/dto	[no test files]
+?   	restaurant-backend/internal/auth/errors	[no test files]
+ok  	restaurant-backend/internal/auth/handler	(cached)
+?   	restaurant-backend/internal/auth/interfaces	[no test files]
+?   	restaurant-backend/internal/auth/model	[no test files]
+?   	restaurant-backend/internal/auth/repository	[no test files]
+ok  	restaurant-backend/internal/auth/security	(cached)
+ok  	restaurant-backend/internal/auth/service	(cached)
+?   	restaurant-backend/internal/database	[no test files]
+=== services\branch-api ===
+?   	restaurant-backend/cmd/api	[no test files]
+ok  	restaurant-backend/internal/authn	(cached)
+ok  	restaurant-backend/internal/branch	(cached)
+=== services\central-kitchen-supply ===
+?   	github.com/NorthstarEngineering/RAS-Backend/services/inventory-api/cmd/api	[no test files]
+?   	github.com/NorthstarEngineering/RAS-Backend/services/inventory-api/docs	[no test files]
+ok  	github.com/NorthstarEngineering/RAS-Backend/services/inventory-api/internal/inventory	0.034s
+=== services\cost-api ===
+?   	github.com/NorthstarEngineering/RAS-Backend/services/cost-api/cmd	[no test files]
+?   	github.com/NorthstarEngineering/RAS-Backend/services/cost-api/docs	[no test files]
+ok  	github.com/NorthstarEngineering/RAS-Backend/services/cost-api/internal/cost	(cached)
+=== services\inventory-api ===
+?   	inventory-api/cmd/api	[no test files]
+ok  	inventory-api/internal/inventory	(cached)
+?   	inventory-api/migrations	[no test files]
+=== services\menu-api ===
+?   	github.com/NorthstarEngineering/RAS-Backend/services/menu-api/cmd/api	[no test files]
+?   	github.com/NorthstarEngineering/RAS-Backend/services/menu-api/docs	[no test files]
+?   	github.com/NorthstarEngineering/RAS-Backend/services/menu-api/internal/menu	[no test files]
+=== services\sales-api ===
+?   	github.com/NorthstarEngineering/RAS-Backend/services/sales-api/cmd	[no test files]
+?   	github.com/NorthstarEngineering/RAS-Backend/services/sales-api/docs	[no test files]
+ok  	github.com/NorthstarEngineering/RAS-Backend/services/sales-api/internal/sales	(cached)
+=== services\transfer-api ===
+?   	ras/transfer-api/cmd/api	[no test files]
+ok  	ras/transfer-api/internal/transfer	(cached)
+COMBINED_EXIT=0

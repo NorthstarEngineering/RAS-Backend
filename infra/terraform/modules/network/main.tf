@@ -46,33 +46,9 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_eip" "nat" {
-  domain = "vpc"
-  tags   = { Name = "${var.name}-nat", Environment = "development" }
-}
-resource "aws_nat_gateway" "this" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public["0"].id
-  depends_on    = [aws_internet_gateway.this]
-  tags          = { Name = "${var.name}-nat", Environment = "development" }
-}
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.this.id
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.this.id
-  }
-  tags = { Name = "${var.name}-private", Environment = "development" }
-}
-resource "aws_route_table_association" "private" {
-  for_each       = aws_subnet.private
-  subnet_id      = each.value.id
-  route_table_id = aws_route_table.private.id
-}
-
 resource "aws_security_group" "application" {
   name        = "${var.name}-application"
-  description = "Private API workloads. Incoming API traffic is accepted only from the internal ALB."
+  description = "API containers accept traffic only from the API Gateway proxy Lambda."
   vpc_id      = aws_vpc.this.id
   egress {
     from_port   = 0
@@ -82,50 +58,25 @@ resource "aws_security_group" "application" {
   }
   tags = { Name = "${var.name}-application", Environment = "development" }
 }
-resource "aws_security_group" "load_balancer" {
-  name        = "${var.name}-internal-alb"
-  description = "Private ALB accepts HTTP only from the API Gateway VPC Link."
+resource "aws_security_group" "api_proxy" {
+  name        = "${var.name}-api-proxy"
+  description = "VPC-attached Lambda proxy to the application host."
   vpc_id      = aws_vpc.this.id
-  egress      = []
-  tags        = { Name = "${var.name}-internal-alb", Environment = "development" }
-}
-resource "aws_security_group" "vpc_link" {
-  name        = "${var.name}-api-vpc-link"
-  description = "API Gateway VPC Link to internal ALB."
-  vpc_id      = aws_vpc.this.id
-  egress      = []
-  tags        = { Name = "${var.name}-api-vpc-link", Environment = "development" }
+  egress {
+    from_port       = 9001
+    to_port         = 9003
+    protocol        = "tcp"
+    security_groups = [aws_security_group.application.id]
+    description     = "Proxy Lambda to application host API ports"
+  }
+  tags = { Name = "${var.name}-api-proxy", Environment = "development" }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "application_from_alb" {
+resource "aws_vpc_security_group_ingress_rule" "application_from_proxy" {
   security_group_id            = aws_security_group.application.id
-  referenced_security_group_id = aws_security_group.load_balancer.id
+  referenced_security_group_id = aws_security_group.api_proxy.id
   ip_protocol                  = "tcp"
   from_port                    = 9001
   to_port                      = 9003
-  description                  = "API listener ports from internal ALB only"
-}
-resource "aws_vpc_security_group_ingress_rule" "alb_from_vpc_link" {
-  security_group_id            = aws_security_group.load_balancer.id
-  referenced_security_group_id = aws_security_group.vpc_link.id
-  ip_protocol                  = "tcp"
-  from_port                    = 80
-  to_port                      = 80
-  description                  = "HTTP from API Gateway VPC Link only"
-}
-resource "aws_vpc_security_group_egress_rule" "alb_to_application" {
-  security_group_id            = aws_security_group.load_balancer.id
-  referenced_security_group_id = aws_security_group.application.id
-  ip_protocol                  = "tcp"
-  from_port                    = 9001
-  to_port                      = 9003
-  description                  = "Forward to API containers"
-}
-resource "aws_vpc_security_group_egress_rule" "vpc_link_to_alb" {
-  security_group_id            = aws_security_group.vpc_link.id
-  referenced_security_group_id = aws_security_group.load_balancer.id
-  ip_protocol                  = "tcp"
-  from_port                    = 80
-  to_port                      = 80
-  description                  = "VPC Link to internal ALB"
+  description                  = "API listener ports from API Gateway proxy Lambda only"
 }

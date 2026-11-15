@@ -6,7 +6,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/api ./cmd/api
 
 FROM alpine:3.22
-RUN addgroup -S app && adduser -S -G app app && apk add --no-cache ca-certificates
+RUN addgroup -S app && adduser -S -G app app && apk add --no-cache ca-certificates wget
 COPY --from=build /out/api /api
 USER app:app
 EXPOSE 9002

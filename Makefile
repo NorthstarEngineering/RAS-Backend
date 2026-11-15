@@ -1,4 +1,4 @@
-.PHONY: fmt check vet test integration build build-auth build-branch build-attendance compose-up compose-down logs db-status db-up db-seed db-reset-local terraform-fmt terraform-validate terraform-plan image-auth image-branch image-attendance
+.PHONY: fmt check vet test test-coverage integration build build-auth build-branch build-attendance compose-up compose-down logs db-status db-up db-seed db-reset-local terraform-fmt terraform-validate terraform-plan aws-up aws-down aws-shell-down image-auth image-branch image-attendance
 
 fmt:
 	cd services/auth-api && go fmt ./...
@@ -17,6 +17,9 @@ test:
 	cd services/auth-api && go test ./...
 	cd services/branch-api && go test ./...
 	cd services/attendance-api && go test ./...
+
+test-coverage:
+	@powershell -NoProfile -Command "$$ErrorActionPreference = 'Stop'; $$modules = Get-ChildItem services -Recurse -Filter go.mod | Where-Object { $$_.FullName -notmatch '\\\\.tools\\\\' }; New-Item -ItemType Directory -Force test-results | Out-Null; foreach ($$module in $$modules) { $$dir = $$module.DirectoryName; $$name = $$dir.Name; Push-Location $$dir; go test ./... -covermode=atomic -coverprofile=(Join-Path (Join-Path (Get-Location).Path '..\\..\\test-results') ($$name + '.out')); if ($$LASTEXITCODE -ne 0) { Pop-Location; exit $$LASTEXITCODE }; Pop-Location }"
 
 integration:
 	docker compose -f deploy/docker-compose.yml exec -T postgres sh -ec 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /tests/schema.sql'
@@ -64,3 +67,12 @@ terraform-validate:
 	terraform -chdir=infra/terraform/dev validate
 terraform-plan:
 	terraform -chdir=infra/terraform/dev plan -var-file=terraform.tfvars
+
+aws-up:
+	powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\aws-dev.ps1 up
+
+aws-down:
+	powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\aws-dev.ps1 down
+
+aws-shell-down:
+	powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\aws-dev.ps1 shell-down

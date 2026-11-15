@@ -48,12 +48,16 @@ jobs:
       - name: Create restricted runtime database roles
         env:
           PGPASSWORD: ci_migration_password
-        run: >-
-          psql -h localhost -U migration_admin -d restaurant_db -v ON_ERROR_STOP=1
-          -v auth_password=ci_auth_password
-          -v branch_password=ci_branch_password
-          -v attendance_password=ci_attendance_password
-          -f database/bootstrap/roles.sql
+          AUTH_DB_PASSWORD: ci_auth_password
+          BRANCH_DB_PASSWORD: ci_branch_password
+          ATTENDANCE_DB_PASSWORD: ci_attendance_password
+          MENU_DB_PASSWORD: ci_menu_password
+          INVENTORY_DB_PASSWORD: ci_inventory_password
+          CENTRAL_KITCHEN_DB_PASSWORD: ci_central_kitchen_password
+          COST_DB_PASSWORD: ci_cost_password
+          SALES_DB_PASSWORD: ci_sales_password
+          TRANSFER_DB_PASSWORD: ci_transfer_password
+        run: psql -h localhost -U migration_admin -d restaurant_db -v ON_ERROR_STOP=1 -f database/bootstrap/roles.sql
       - name: Apply complete migration history to fresh database
         env:
           GOOSE_DRIVER: postgres
@@ -100,3 +104,4 @@ jobs:
           image="${ECR_REPOSITORY}:${GITHUB_SHA}"
           docker build -f database/Dockerfile -t "$image" .
           docker push "$image"
+

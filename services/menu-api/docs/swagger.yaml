@@ -1,0 +1,371 @@
+basePath: /api/v1
+definitions:
+  menu.ApproveRequestRequest:
+    properties:
+      actor_role:
+        description: ← ضيفي ده
+        type: string
+      sku:
+        type: string
+    required:
+    - sku
+    type: object
+  menu.CategoryResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      sort_order:
+        type: integer
+    type: object
+  menu.CreateCategoryRequest:
+    properties:
+      name:
+        type: string
+      sort_order:
+        type: integer
+    required:
+    - name
+    type: object
+  menu.CreateMenuItemDirectRequest:
+    properties:
+      actor_role:
+        description: ← ضيفي ده
+        type: string
+      category_id:
+        type: string
+      description:
+        type: string
+      kds_station:
+        type: string
+      name:
+        type: string
+      name_en:
+        type: string
+      prep_time_minutes:
+        type: integer
+      selling_price:
+        minimum: 0
+        type: number
+      sku:
+        type: string
+    required:
+    - name
+    - selling_price
+    - sku
+    type: object
+  menu.CreateMenuRequestRequest:
+    properties:
+      branch_id:
+        type: string
+      description:
+        type: string
+      item_name:
+        type: string
+      justification:
+        type: string
+      requested_price:
+        type: number
+    required:
+    - branch_id
+    - item_name
+    - requested_price
+    type: object
+  menu.MenuItemResponse:
+    properties:
+      category_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      kds_station:
+        type: string
+      name:
+        type: string
+      name_en:
+        type: string
+      prep_time_minutes:
+        type: integer
+      selling_price:
+        type: number
+      sku:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  menu.MenuRequestResponse:
+    properties:
+      branch_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      item_name:
+        type: string
+      justification:
+        type: string
+      rejection_reason:
+        type: string
+      requested_by:
+        type: string
+      requested_price:
+        type: number
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  menu.RejectRequestRequest:
+    properties:
+      actor_role:
+        description: ← ضيفي ده
+        type: string
+      reason:
+        type: string
+    required:
+    - reason
+    type: object
+  menu.UpdateMenuItemRequest:
+    properties:
+      actor_role:
+        type: string
+      category_id:
+        type: string
+      description:
+        type: string
+      is_active:
+        type: boolean
+      kds_station:
+        type: string
+      name:
+        type: string
+      name_en:
+        type: string
+      prep_time_minutes:
+        type: integer
+      selling_price:
+        minimum: 0
+        type: number
+    required:
+    - name
+    - selling_price
+    type: object
+host: localhost:9005
+info:
+  contact: {}
+  description: Master Menu & Pricing API for Restaurant Branch Management.
+  title: Menu API
+  version: "1.0"
+paths:
+  /menu/categories:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/menu.CategoryResponse'
+            type: array
+      summary: List Categories
+      tags:
+      - Categories
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/menu.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/menu.CategoryResponse'
+      summary: Create Category
+      tags:
+      - Categories
+  /menu/items:
+    get:
+      description: Get all items in the Master Menu.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/menu.MenuItemResponse'
+            type: array
+      summary: List Menu Items
+      tags:
+      - Menu Items
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Item Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/menu.CreateMenuItemDirectRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/menu.MenuItemResponse'
+      summary: Create Menu Item (CEO Only)
+      tags:
+      - Menu Items
+  /menu/items/{id}:
+    get:
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/menu.MenuItemResponse'
+      summary: Get Menu Item by ID
+      tags:
+      - Menu Items
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/menu.UpdateMenuItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/menu.MenuItemResponse'
+      summary: Update Menu Item
+      tags:
+      - Menu Items
+  /menu/requests:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/menu.MenuRequestResponse'
+            type: array
+      summary: List Menu Requests
+      tags:
+      - Requests
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/menu.CreateMenuRequestRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/menu.MenuRequestResponse'
+      summary: Create Menu Request (Branch Manager)
+      tags:
+      - Requests
+  /menu/requests/{id}/approve:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Approve Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/menu.ApproveRequestRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/menu.MenuItemResponse'
+      summary: Approve Menu Request (CEO Only)
+      tags:
+      - Requests
+  /menu/requests/{id}/reject:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Reject Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/menu.RejectRequestRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/menu.MenuRequestResponse'
+      summary: Reject Menu Request (CEO Only)
+      tags:
+      - Requests
+swagger: "2.0"

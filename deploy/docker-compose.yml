@@ -34,15 +34,16 @@ services:
       AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:?Set AUTH_DB_PASSWORD in .env}
       BRANCH_DB_PASSWORD: ${BRANCH_DB_PASSWORD:?Set BRANCH_DB_PASSWORD in .env}
       ATTENDANCE_DB_PASSWORD: ${ATTENDANCE_DB_PASSWORD:?Set ATTENDANCE_DB_PASSWORD in .env}
+      MENU_DB_PASSWORD: ${MENU_DB_PASSWORD:?Set MENU_DB_PASSWORD in .env}
+      INVENTORY_DB_PASSWORD: ${INVENTORY_DB_PASSWORD:?Set INVENTORY_DB_PASSWORD in .env}
+      CENTRAL_KITCHEN_DB_PASSWORD: ${CENTRAL_KITCHEN_DB_PASSWORD:?Set CENTRAL_KITCHEN_DB_PASSWORD in .env}
+      COST_DB_PASSWORD: ${COST_DB_PASSWORD:?Set COST_DB_PASSWORD in .env}
+      SALES_DB_PASSWORD: ${SALES_DB_PASSWORD:?Set SALES_DB_PASSWORD in .env}
+      TRANSFER_DB_PASSWORD: ${TRANSFER_DB_PASSWORD:?Set TRANSFER_DB_PASSWORD in .env}
     volumes:
       - ../database/bootstrap/roles.sql:/bootstrap/roles.sql:ro
-    entrypoint: ["/bin/sh", "-ec"]
-    command: >-
-      psql -v ON_ERROR_STOP=1
-      -v auth_password="$${AUTH_DB_PASSWORD}"
-      -v branch_password="$${BRANCH_DB_PASSWORD}"
-      -v attendance_password="$${ATTENDANCE_DB_PASSWORD}"
-      -f /bootstrap/roles.sql
+    entrypoint: ["psql"]
+    command: ["-v", "ON_ERROR_STOP=1", "-f", "/bootstrap/roles.sql"]
     restart: "no"
 
   migrate:
@@ -145,6 +146,124 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  menu-api:
+    build:
+      context: ../services/menu-api
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: "9005"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-restaurant_db}
+      DB_USER: menu_app
+      DB_PASSWORD: ${MENU_DB_PASSWORD:?Set MENU_DB_PASSWORD in .env}
+      DB_SSLMODE: disable
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    ports: ["9005:9005"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9005/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  central-kitchen-api:
+    build:
+      context: ../services/central-kitchen-supply
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://central_kitchen_app:${CENTRAL_KITCHEN_DB_PASSWORD:?Set CENTRAL_KITCHEN_DB_PASSWORD in .env}@postgres:5432/${DB_NAME:-restaurant_db}?sslmode=disable
+    ports: ["9004:9004"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9004/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  inventory-api:
+    build:
+      context: ../services/inventory-api
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://inventory_app:${INVENTORY_DB_PASSWORD:?Set INVENTORY_DB_PASSWORD in .env}@postgres:5432/${DB_NAME:-restaurant_db}?sslmode=disable
+      PORT: "9010"
+    ports: ["9010:9010"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9010/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  cost-api:
+    build:
+      context: ../services/cost-api
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://cost_app:${COST_DB_PASSWORD:?Set COST_DB_PASSWORD in .env}@postgres:5432/${DB_NAME:-restaurant_db}?sslmode=disable
+    ports: ["9007:9007"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9007/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  sales-api:
+    build:
+      context: ../services/sales-api
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://sales_app:${SALES_DB_PASSWORD:?Set SALES_DB_PASSWORD in .env}@postgres:5432/${DB_NAME:-restaurant_db}?sslmode=disable
+    ports: ["9006:9006"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9006/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  transfer-api:
+    build:
+      context: ../services/transfer-api
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://transfer_app:${TRANSFER_DB_PASSWORD:?Set TRANSFER_DB_PASSWORD in .env}@postgres:5432/${DB_NAME:-restaurant_db}?sslmode=disable
+      PORT: "9008"
+    ports: ["9008:9008"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9008/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     name: ras_backend_postgres_data
+

@@ -1,0 +1,422 @@
+basePath: /api/v1
+definitions:
+  inventory.ApproveItemReq:
+    properties:
+      approved_qty:
+        minimum: 0
+        type: number
+      item_id:
+        type: string
+    required:
+    - approved_qty
+    - item_id
+    type: object
+  inventory.ApproveSupplyRequestReq:
+    properties:
+      actor_role:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/inventory.ApproveItemReq'
+        type: array
+    required:
+    - items
+    type: object
+  inventory.CreateGoodRequest:
+    properties:
+      category:
+        type: string
+      description:
+        type: string
+      initial_qty:
+        type: number
+      max_capacity:
+        type: number
+      name:
+        type: string
+      reorder_level:
+        type: number
+      sku:
+        type: string
+      unit:
+        type: string
+      unit_cost:
+        minimum: 0
+        type: number
+    required:
+    - name
+    - sku
+    - unit
+    - unit_cost
+    type: object
+  inventory.CreateMovementRequest:
+    properties:
+      actor_id:
+        description: ← ضيفي السطر ده
+        type: string
+      branch_id:
+        description: ← ضيفي السطر ده
+        type: string
+      good_id:
+        type: string
+      quantity:
+        type: number
+      reason:
+        type: string
+      type:
+        enum:
+        - IN
+        - OUT
+        - ADJUSTMENT
+        type: string
+    required:
+    - good_id
+    - quantity
+    - type
+    type: object
+  inventory.CreateMovementResponse:
+    properties:
+      inventory:
+        $ref: '#/definitions/inventory.InventoryResponse'
+      movement:
+        $ref: '#/definitions/inventory.MovementResponse'
+    type: object
+  inventory.CreateSupplyRequestReq:
+    properties:
+      branch_id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/inventory.SupplyRequestItem'
+        minItems: 1
+        type: array
+      notes:
+        type: string
+      priority:
+        type: string
+    required:
+    - branch_id
+    - items
+    type: object
+  inventory.ErrorBody:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  inventory.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/inventory.ErrorBody'
+    type: object
+  inventory.Good:
+    properties:
+      category:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      max_capacity:
+        type: number
+      name:
+        type: string
+      reorder_level:
+        type: number
+      sku:
+        type: string
+      unit:
+        type: string
+      unit_cost:
+        type: number
+      updated_at:
+        type: string
+    type: object
+  inventory.InventoryResponse:
+    properties:
+      branch_id:
+        type: string
+      good_id:
+        type: string
+      id:
+        type: string
+      quantity:
+        type: number
+      updated_at:
+        type: string
+    type: object
+  inventory.MovementResponse:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: string
+      inventory_id:
+        type: string
+      quantity:
+        type: number
+      reason:
+        type: string
+      type:
+        type: string
+    type: object
+  inventory.SupplyRequestItem:
+    properties:
+      approved_qty:
+        type: number
+      created_at:
+        type: string
+      good_id:
+        type: string
+      id:
+        type: string
+      received_qty:
+        type: number
+      request_id:
+        type: string
+      requested_qty:
+        type: number
+    type: object
+  inventory.SupplyRequestItemResp:
+    properties:
+      approved_qty:
+        type: number
+      good_id:
+        type: string
+      id:
+        type: string
+      received_qty:
+        type: number
+      requested_qty:
+        type: number
+    type: object
+  inventory.SupplyRequestResponse:
+    properties:
+      branch_id:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/inventory.SupplyRequestItemResp'
+        type: array
+      notes:
+        type: string
+      priority:
+        type: string
+      status:
+        type: string
+    type: object
+host: localhost:9004
+info:
+  contact: {}
+  description: Inventory management for Central Kitchen & Branches.
+  title: Inventory API
+  version: "1.0"
+paths:
+  /inventory/goods:
+    get:
+      description: Get a list of all goods in the catalog.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/inventory.Good'
+            type: array
+      summary: List all goods
+      tags:
+      - goods
+    post:
+      consumes:
+      - application/json
+      description: Adds a new good to the master inventory catalog.
+      parameters:
+      - description: Good details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.CreateGoodRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/inventory.Good'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/inventory.ErrorResponse'
+      summary: Create a new good
+      tags:
+      - goods
+  /inventory/goods/{id}:
+    get:
+      description: Get details of a specific good.
+      parameters:
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory.Good'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/inventory.ErrorResponse'
+      summary: Get good by ID
+      tags:
+      - goods
+  /inventory/movements:
+    post:
+      consumes:
+      - application/json
+      description: Records an IN, OUT, or ADJUSTMENT movement for a branch.
+      parameters:
+      - description: Movement details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.CreateMovementRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/inventory.CreateMovementResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/inventory.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/inventory.ErrorResponse'
+      summary: Record inventory movement
+      tags:
+      - inventory
+  /supply/requests:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/inventory.SupplyRequestResponse'
+            type: array
+      summary: List Supply Requests
+      tags:
+      - Supply Requests
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Supply Request Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.CreateSupplyRequestReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/inventory.SupplyRequestResponse'
+      summary: Create Supply Request (Branch Manager)
+      tags:
+      - Supply Requests
+  /supply/requests/{id}/approve:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Approve Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/inventory.ApproveSupplyRequestReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory.SupplyRequestResponse'
+      summary: Approve Supply Request (Supply Manager)
+      tags:
+      - Supply Requests
+  /supply/requests/{id}/receive:
+    patch:
+      parameters:
+      - description: Request ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory.SupplyRequestResponse'
+      summary: Receive Supply Request (Branch Manager)
+      tags:
+      - Supply Requests
+  /supply/requests/{id}/ship:
+    patch:
+      parameters:
+      - description: Request ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role
+        in: body
+        name: actor_role
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory.SupplyRequestResponse'
+      summary: Ship Supply Request (Supply Manager)
+      tags:
+      - Supply Requests
+swagger: "2.0"

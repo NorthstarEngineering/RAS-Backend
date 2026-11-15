@@ -38,7 +38,7 @@ Set-Location services/auth-api
 go run ./cmd/api
 ```
 
-Use the analogous `services/branch-api` and `services/attendance-api` directories. Auth creates the initial CEO only when `APP_ENV=development`, no CEO exists, and explicit seed values are present. There is no hardcoded default password.
+Use the analogous `services/branch-api` and `services/attendance-api` directories. Auth creates the initial CEO only when `APP_ENV=development` and no CEO exists. The tracked development examples use the default local account `Omar` / `omar@example.com` with the temporary password `Omar@12345`; change it immediately after the first login. These values are development-only and must not be used in shared or production environments.
 
 ## Go checks and builds
 

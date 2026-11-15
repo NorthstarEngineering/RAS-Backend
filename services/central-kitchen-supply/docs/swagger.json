@@ -1,0 +1,641 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Inventory management for Central Kitchen \u0026 Branches.",
+        "title": "Inventory API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:9004",
+    "basePath": "/api/v1",
+    "paths": {
+        "/inventory/goods": {
+            "get": {
+                "description": "Get a list of all goods in the catalog.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "List all goods",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/inventory.Good"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Adds a new good to the master inventory catalog.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Create a new good",
+                "parameters": [
+                    {
+                        "description": "Good details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventory.CreateGoodRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.Good"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/inventory/goods/{id}": {
+            "get": {
+                "description": "Get details of a specific good.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Get good by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Good ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.Good"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/inventory/movements": {
+            "post": {
+                "description": "Records an IN, OUT, or ADJUSTMENT movement for a branch.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventory"
+                ],
+                "summary": "Record inventory movement",
+                "parameters": [
+                    {
+                        "description": "Movement details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventory.CreateMovementRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.CreateMovementResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/supply/requests": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Supply Requests"
+                ],
+                "summary": "List Supply Requests",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/inventory.SupplyRequestResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Supply Requests"
+                ],
+                "summary": "Create Supply Request (Branch Manager)",
+                "parameters": [
+                    {
+                        "description": "Supply Request Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventory.CreateSupplyRequestReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.SupplyRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/supply/requests/{id}/approve": {
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Supply Requests"
+                ],
+                "summary": "Approve Supply Request (Supply Manager)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Request ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Approve Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inventory.ApproveSupplyRequestReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.SupplyRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/supply/requests/{id}/receive": {
+            "patch": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Supply Requests"
+                ],
+                "summary": "Receive Supply Request (Branch Manager)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Request ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.SupplyRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/supply/requests/{id}/ship": {
+            "patch": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Supply Requests"
+                ],
+                "summary": "Ship Supply Request (Supply Manager)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Request ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Role",
+                        "name": "actor_role",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/inventory.SupplyRequestResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "inventory.ApproveItemReq": {
+            "type": "object",
+            "required": [
+                "approved_qty",
+                "item_id"
+            ],
+            "properties": {
+                "approved_qty": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "item_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.ApproveSupplyRequestReq": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "actor_role": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/inventory.ApproveItemReq"
+                    }
+                }
+            }
+        },
+        "inventory.CreateGoodRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "sku",
+                "unit",
+                "unit_cost"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "initial_qty": {
+                    "type": "number"
+                },
+                "max_capacity": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "reorder_level": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "unit_cost": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
+        "inventory.CreateMovementRequest": {
+            "type": "object",
+            "required": [
+                "good_id",
+                "quantity",
+                "type"
+            ],
+            "properties": {
+                "actor_id": {
+                    "description": "← ضيفي السطر ده",
+                    "type": "string"
+                },
+                "branch_id": {
+                    "description": "← ضيفي السطر ده",
+                    "type": "string"
+                },
+                "good_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "IN",
+                        "OUT",
+                        "ADJUSTMENT"
+                    ]
+                }
+            }
+        },
+        "inventory.CreateMovementResponse": {
+            "type": "object",
+            "properties": {
+                "inventory": {
+                    "$ref": "#/definitions/inventory.InventoryResponse"
+                },
+                "movement": {
+                    "$ref": "#/definitions/inventory.MovementResponse"
+                }
+            }
+        },
+        "inventory.CreateSupplyRequestReq": {
+            "type": "object",
+            "required": [
+                "branch_id",
+                "items"
+            ],
+            "properties": {
+                "branch_id": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/inventory.SupplyRequestItem"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.ErrorBody": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/inventory.ErrorBody"
+                }
+            }
+        },
+        "inventory.Good": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "max_capacity": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "reorder_level": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "unit_cost": {
+                    "type": "number"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.InventoryResponse": {
+            "type": "object",
+            "properties": {
+                "branch_id": {
+                    "type": "string"
+                },
+                "good_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.MovementResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "inventory_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventory.SupplyRequestItem": {
+            "type": "object",
+            "properties": {
+                "approved_qty": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "good_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "received_qty": {
+                    "type": "number"
+                },
+                "request_id": {
+                    "type": "string"
+                },
+                "requested_qty": {
+                    "type": "number"
+                }
+            }
+        },
+        "inventory.SupplyRequestItemResp": {
+            "type": "object",
+            "properties": {
+                "approved_qty": {
+                    "type": "number"
+                },
+                "good_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "received_qty": {
+                    "type": "number"
+                },
+                "requested_qty": {
+                    "type": "number"
+                }
+            }
+        },
+        "inventory.SupplyRequestResponse": {
+            "type": "object",
+            "properties": {
+                "branch_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/inventory.SupplyRequestItemResp"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

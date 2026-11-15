@@ -1,0 +1,74 @@
+name: Docker stack validation
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/**'
+      - 'database/**'
+      - 'services/**/Dockerfile'
+      - 'services/**/go.mod'
+      - 'services/**/go.sum'
+      - '.env.example'
+      - '.github/workflows/docker-stack.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/**'
+      - 'database/**'
+      - 'services/**/Dockerfile'
+      - '.github/workflows/docker-stack.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compose-build-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure disposable smoke credentials
+        run: |
+          cat > .env <<'EOF'
+          APP_ENV=production
+          DB_NAME=restaurant_db
+          DB_PORT_FORWARD=5432
+          DB_MAX_OPEN_CONNS=5
+          DB_MAX_IDLE_CONNS=2
+          MIGRATION_DB_USER=migration_admin
+          MIGRATION_DB_PASSWORD=SmokeMigrationPass123456789
+          AUTH_DB_PASSWORD=SmokeAuthPass123456789
+          BRANCH_DB_PASSWORD=SmokeBranchPass123456789
+          ATTENDANCE_DB_PASSWORD=SmokeAttendancePass123456789
+          MENU_DB_PASSWORD=SmokeMenuPass123456789
+          INVENTORY_DB_PASSWORD=SmokeInventoryPass123456789
+          CENTRAL_KITCHEN_DB_PASSWORD=SmokeCentralPass123456789
+          COST_DB_PASSWORD=SmokeCostPass123456789
+          SALES_DB_PASSWORD=SmokeSalesPass123456789
+          TRANSFER_DB_PASSWORD=SmokeTransferPass123456789
+          JWT_SECRET=SmokeJwtSecret12345678901234567890
+          SEED_CEO_NAME=CEO
+          SEED_CEO_EMAIL=smoke@example.test
+          SEED_CEO_PASSWORD=Smoke@Ceo123456789
+          EOF
+      - name: Validate Compose configuration
+        run: docker compose --env-file .env -f deploy/docker-compose.yml config --quiet
+      - name: Build and start every service
+        run: docker compose --env-file .env -p ras-ci -f deploy/docker-compose.yml up -d --build --wait --wait-timeout 240
+      - name: Verify all API health endpoints
+        run: |
+          set -euo pipefail
+          for port in 9001 9002 9003 9004 9005 9006 9007 9008 9010; do
+            curl --fail --silent --show-error "http://127.0.0.1:${port}/health" || {
+              if [ "$port" = 9008 ] || [ "$port" = 9010 ]; then
+                curl --fail --silent --show-error "http://127.0.0.1:${port}/healthz"
+              else
+                exit 1
+              fi
+            }
+          done
+      - name: Capture service state on failure
+        if: failure()
+        run: docker compose --env-file .env -p ras-ci -f deploy/docker-compose.yml logs --no-color
+      - name: Stop disposable stack
+        if: always()
+        run: docker compose --env-file .env -p ras-ci -f deploy/docker-compose.yml down

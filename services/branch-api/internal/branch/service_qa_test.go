@@ -170,6 +170,30 @@ func TestQACreateSupportsBothDefinedBranchTypes(t *testing.T) {
 	}
 }
 
+func TestQAGeneratesRevenueByBranchType(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		branchType BranchType
+		want       bool
+	}{
+		{name: "regular branch", branchType: TypeBranch, want: true},
+		{name: "central kitchen", branchType: TypeCentralKitchen, want: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.branchType.GeneratesRevenue(); got != tc.want {
+				t.Errorf("GeneratesRevenue() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestQAToResponseMarksCentralKitchenAsNonRevenueGenerating(t *testing.T) {
+	response := ToResponse(Branch{Type: TypeCentralKitchen})
+	if response.GeneratesRevenue {
+		t.Fatalf("ToResponse().GeneratesRevenue = true, want false")
+	}
+}
+
 func TestQACreatePropagatesRepositoryError(t *testing.T) {
 	want := errors.New("create unavailable")
 	repo := &qaRepository{createErr: want}

@@ -1,7 +1,19 @@
-aws_region        = "eu-west-3"
-aws_profile       = "terraform" # Local use only; omit in GitHub Actions (OIDC).
-app_secret_arn    = "arn:aws:secretsmanager:eu-west-3:ACCOUNT:secret:ras-backend/dev/app-REPLACE"
-authorizer_jwt_secret_arn = "arn:aws:secretsmanager:eu-west-3:ACCOUNT:secret:ras-backend/dev/jwt-signing-REPLACE"
-api_cors_allowed_origins = [] # Add exact trusted browser origins only if needed.
-application_instance_type = "t3.small"
+aws_region  = "eu-west-3"
+# Local profile only; omit this value in GitHub Actions.
+aws_profile = "terraform"
+
+# Replace every placeholder with unique generated values in the ignored terraform.tfvars.
+# Never commit that file. Terraform state contains these values; protect the S3 backend.
+database_master_password = "REPLACE_WITH_32_RANDOM_URL_SAFE_CHARACTERS"
+app_secret_json = <<JSON
+{"JWT_SECRET":"REPLACE_WITH_64_RANDOM_URL_SAFE_CHARACTERS","AUTH_DB_PASSWORD":"REPLACE_WITH_RANDOM_URL_SAFE_PASSWORD","BRANCH_DB_PASSWORD":"REPLACE_WITH_RANDOM_URL_SAFE_PASSWORD","ATTENDANCE_DB_PASSWORD":"REPLACE_WITH_RANDOM_URL_SAFE_PASSWORD","SEED_CEO_NAME":"DevelopmentCEO","SEED_CEO_EMAIL":"REPLACE_WITH_YOUR_DEVELOPMENT_EMAIL","SEED_CEO_PASSWORD":"REPLACE_WITH_RANDOM_URL_SAFE_PASSWORD"}
+JSON
+
+api_cors_allowed_origins = [
+  "http://localhost:5175",
+  "http://127.0.0.1:5175",
+]
+application_instance_type = "t3.micro"
 database_instance_class   = "db.t4g.micro"
+database_allocated_storage_gib = 20
+database_backup_retention_days = 0

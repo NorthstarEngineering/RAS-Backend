@@ -14,8 +14,10 @@
 **/.terraform/
 **/.tools/
 infra/terraform/dev/jwt-authorizer.zip
+infra/terraform/dev/request-proxy.zip
 *.tfstate
 *.tfstate.*
+*.state.dpapi
 *.tfplan
 *.tfvars
 !*.tfvars.example
@@ -29,3 +31,6 @@ crash.log
 Thumbs.db
 .vscode/
 .idea/
+
+# Nested repository
+RAS-Backend/
