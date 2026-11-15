@@ -1,5 +1,34 @@
 basePath: /api/v1
 definitions:
+  cost.COGSReportResponse:
+    properties:
+      branch_id:
+        type: string
+      from:
+        type: string
+      to:
+        type: string
+      total_cogs:
+        type: number
+    type: object
+  cost.EstimatedContributionResponse:
+    properties:
+      estimated_contribution:
+        type: number
+      gross_profit:
+        type: number
+      labor_cost:
+        type: number
+    type: object
+  cost.GrossProfitReportResponse:
+    properties:
+      gross_profit:
+        type: number
+      total_cogs:
+        type: number
+      total_revenue:
+        type: number
+    type: object
   cost.MenuItemCostingResponse:
     properties:
       components:
@@ -100,4 +129,79 @@ paths:
       summary: Get Menu Item Costing
       tags:
       - Costing
+  /cost/reports/cogs:
+    get:
+      parameters:
+      - description: Filter by branch ID
+        in: query
+        name: branch_id
+        type: string
+      - description: From date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: To date (YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cost.COGSReportResponse'
+      summary: Get COGS Report
+      tags:
+      - Reports
+  /cost/reports/estimated-contribution:
+    get:
+      parameters:
+      - description: Filter by branch ID
+        in: query
+        name: branch_id
+        type: string
+      - description: From date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: To date (YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cost.EstimatedContributionResponse'
+      summary: Get Estimated Contribution
+      tags:
+      - Reports
+  /cost/reports/gross-profit:
+    get:
+      parameters:
+      - description: Filter by branch ID
+        in: query
+        name: branch_id
+        type: string
+      - description: From date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: To date (YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cost.GrossProfitReportResponse'
+      summary: Get Gross Profit Report
+      tags:
+      - Reports
 swagger: "2.0"

@@ -60,3 +60,31 @@ func (c *MenuItemCost) ToCostingResponse(sellingPrice float64, components []*Rec
 		LastUpdated:  c.UpdatedAt.UTC().Format(time.RFC3339),
 	}
 }
+
+// ============================================================
+// Reports DTOs
+// ============================================================
+type ReportFilter struct {
+	BranchID string
+	From     string
+	To       string
+}
+
+type COGSReportResponse struct {
+	TotalCOGS float64 `db:"total_cogs" json:"total_cogs"`
+	From      string  `json:"from,omitempty"`
+	To        string  `json:"to,omitempty"`
+	BranchID  string  `json:"branch_id,omitempty"`
+}
+
+type GrossProfitReportResponse struct {
+	TotalRevenue float64 `db:"total_revenue" json:"total_revenue"`
+	TotalCOGS    float64 `db:"total_cogs" json:"total_cogs"`
+	GrossProfit  float64 `db:"gross_profit" json:"gross_profit"`
+}
+
+type EstimatedContributionResponse struct {
+	GrossProfit           float64 `db:"gross_profit" json:"gross_profit"`
+	LaborCost             float64 `db:"labor_cost" json:"labor_cost"`
+	EstimatedContribution float64 `db:"estimated_contribution" json:"estimated_contribution"`
+}

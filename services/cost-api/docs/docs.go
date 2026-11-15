@@ -72,9 +72,171 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/cost/reports/cogs": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get COGS Report",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by branch ID",
+                        "name": "branch_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "From date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "To date (YYYY-MM-DD)",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/cost.COGSReportResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/cost/reports/estimated-contribution": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get Estimated Contribution",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by branch ID",
+                        "name": "branch_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "From date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "To date (YYYY-MM-DD)",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/cost.EstimatedContributionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/cost/reports/gross-profit": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get Gross Profit Report",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by branch ID",
+                        "name": "branch_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "From date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "To date (YYYY-MM-DD)",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/cost.GrossProfitReportResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "cost.COGSReportResponse": {
+            "type": "object",
+            "properties": {
+                "branch_id": {
+                    "type": "string"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                },
+                "total_cogs": {
+                    "type": "number"
+                }
+            }
+        },
+        "cost.EstimatedContributionResponse": {
+            "type": "object",
+            "properties": {
+                "estimated_contribution": {
+                    "type": "number"
+                },
+                "gross_profit": {
+                    "type": "number"
+                },
+                "labor_cost": {
+                    "type": "number"
+                }
+            }
+        },
+        "cost.GrossProfitReportResponse": {
+            "type": "object",
+            "properties": {
+                "gross_profit": {
+                    "type": "number"
+                },
+                "total_cogs": {
+                    "type": "number"
+                },
+                "total_revenue": {
+                    "type": "number"
+                }
+            }
+        },
         "cost.MenuItemCostingResponse": {
             "type": "object",
             "properties": {

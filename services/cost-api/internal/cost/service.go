@@ -75,3 +75,18 @@ func (s *Service) GetMenuItemCosting(ctx context.Context, menuItemID string) (*M
 	resp := cost.ToCostingResponse(price, components)
 	return &resp, nil
 }
+
+// ============================================================
+// Reports
+// ============================================================
+func (s *Service) GetCOGSReport(ctx context.Context, f ReportFilter) (*COGSReportResponse, error) {
+	return s.repo.GetCOGSReport(ctx, f)
+}
+
+func (s *Service) GetGrossProfitReport(ctx context.Context, f ReportFilter) (*GrossProfitReportResponse, error) {
+	return s.repo.GetGrossProfitReport(ctx, f)
+}
+
+func (s *Service) GetEstimatedContribution(ctx context.Context, f ReportFilter) (*EstimatedContributionResponse, error) {
+	return s.repo.GetEstimatedContribution(ctx, f)
+}
