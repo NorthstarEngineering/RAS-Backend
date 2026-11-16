@@ -258,3 +258,16 @@ Both findings were test-code defects, not evidence that the Branch API runtime b
 - **Fix:** Probe the exact public `Path`; continue using `LocalPath` only for the private host-side check.
 - **Retest:** Proxy route unit tests pass; the full public/private endpoint matrix will be recorded during the ephemeral cloud run.
 - **Prevention:** Keep public gateway paths and downstream service paths separate in endpoint test fixtures; verify each public URL against both the API Gateway route and proxy rewrite table.
+
+### TF-029 — PowerShell collapsed the ECR image ID array
+
+- **Affected area:** `scripts/aws-dev.ps1` ECR pre-destroy image purge.
+- **Environment/commit/date:** AWS account `109573999710`, `eu-west-3`; first live ephemeral cleanup after PR #32; 2026-11-16.
+- **Severity/status:** High for teardown; fix implemented, live retest pending.
+- **Test type:** AWS ECR integration and PowerShell-to-AWS CLI argument handling.
+- **Symptom:** `batch-delete-image` returned `InvalidImageDigest`, and its error text showed multiple SHA-256 digests combined into one image ID argument.
+- **Cause:** PowerShell flattened the string array passed through the `Invoke-Aws` wrapper into one CLI argument.
+- **Fix:** Submit each image digest as a separate `batch-delete-image --image-ids imageDigest=<digest>` call so argument boundaries are explicit.
+- **Impact:** The initial cleanup stopped before Terraform destroy or fresh deployment. The existing S3 state bucket, VPC, and ECR repositories remain, and no new stack was provisioned.
+- **Retest:** Pending a full successful ephemeral run.
+- **Prevention:** Exercise PowerShell array forwarding through wrapper functions with the actual AWS CLI; use singular request arguments where parameter-array expansion is ambiguous.
