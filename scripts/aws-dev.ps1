@@ -103,20 +103,49 @@ function Remove-DevelopmentEcrImages {
     $existing = @($existingJson | ConvertFrom-Json)
     foreach ($repository in $repositories) {
         if ($repository -notin $existing) { continue }
-        $imageJson = Invoke-Aws ecr describe-images --repository-name $repository --query 'imageDetails[].imageDigest' --output json
-        $digests = @($imageJson | ConvertFrom-Json)
-        for ($offset = 0; $offset -lt $digests.Count; $offset += 100) {
-            $end = [Math]::Min($offset + 99, $digests.Count - 1)
-            $imageIds = @($digests[$offset..$end] | ForEach-Object { @{ imageDigest = $_ } })
-            $request = @{ repositoryName = $repository; imageIds = $imageIds } | ConvertTo-Json -Depth 5 -Compress
-            $requestPath = Join-Path $env:TEMP ("ras-ecr-delete-" + [guid]::NewGuid().ToString('N') + '.json')
-            [System.IO.File]::WriteAllText($requestPath, $request, [System.Text.UTF8Encoding]::new($false))
-            try { $resultJson = Invoke-Aws ecr batch-delete-image --cli-input-json "file://$requestPath" --output json }
-            finally { Remove-Item -LiteralPath $requestPath -Force -ErrorAction SilentlyContinue }
-            $result = $resultJson | ConvertFrom-Json
-            if (@($result.failures).Count -gt 0) {
-                $reasons = @($result.failures | ForEach-Object { "$($_.imageId.imageDigest):$($_.failureCode) ($($_.failureReason))" }) -join ', '
-                throw "Could not empty ECR repository $repository before teardown: $reasons"
+        $indexTypes = @('application/vnd.oci.image.index.v1+json', 'application/vnd.docker.distribution.manifest.list.v2+json')
+        $indexAttemptsWithoutProgress = 0
+        while ($true) {
+            $imageJson = Invoke-Aws ecr describe-images --repository-name $repository --query 'imageDetails[].{digest:imageDigest,mediaType:imageManifestMediaType}' --output json
+            $images = @($imageJson | ConvertFrom-Json)
+            if ($images.Count -eq 0) { break }
+            $indexes = @($images | Where-Object { $_.mediaType -in $indexTypes })
+            if ($indexes.Count -gt 0) {
+                $deletedIndex = $false
+                foreach ($image in $indexes) {
+                    $request = @{ repositoryName = $repository; imageIds = @(@{ imageDigest = $image.digest }) } | ConvertTo-Json -Depth 5 -Compress
+                    $requestPath = Join-Path $env:TEMP ("ras-ecr-delete-" + [guid]::NewGuid().ToString('N') + '.json')
+                    [System.IO.File]::WriteAllText($requestPath, $request, [System.Text.UTF8Encoding]::new($false))
+                    try { $resultJson = Invoke-Aws ecr batch-delete-image --cli-input-json "file://$requestPath" --output json }
+                    finally { Remove-Item -LiteralPath $requestPath -Force -ErrorAction SilentlyContinue }
+                    $result = $resultJson | ConvertFrom-Json
+                    $failures = @($result.failures)
+                    $otherFailures = @($failures | Where-Object failureCode -ne 'ImageReferencedByManifestList')
+                    if ($otherFailures.Count -gt 0) {
+                        $reasons = @($otherFailures | ForEach-Object { "$($_.imageId.imageDigest):$($_.failureCode) ($($_.failureReason))" }) -join ', '
+                        throw "Could not delete manifest indexes from ECR repository $repository: $reasons"
+                    }
+                    if ($failures.Count -eq 0) { $deletedIndex = $true }
+                }
+                if ($deletedIndex) { $indexAttemptsWithoutProgress = 0; continue }
+                $indexAttemptsWithoutProgress++
+                if ($indexAttemptsWithoutProgress -ge 3) { throw "ECR manifest indexes in $repository remain referenced after three cleanup passes." }
+                Start-Sleep -Seconds 2
+                continue
+            }
+            for ($offset = 0; $offset -lt $images.Count; $offset += 100) {
+                $end = [Math]::Min($offset + 99, $images.Count - 1)
+                $imageIds = @($images[$offset..$end] | ForEach-Object { @{ imageDigest = $_.digest } })
+                $request = @{ repositoryName = $repository; imageIds = $imageIds } | ConvertTo-Json -Depth 5 -Compress
+                $requestPath = Join-Path $env:TEMP ("ras-ecr-delete-" + [guid]::NewGuid().ToString('N') + '.json')
+                [System.IO.File]::WriteAllText($requestPath, $request, [System.Text.UTF8Encoding]::new($false))
+                try { $resultJson = Invoke-Aws ecr batch-delete-image --cli-input-json "file://$requestPath" --output json }
+                finally { Remove-Item -LiteralPath $requestPath -Force -ErrorAction SilentlyContinue }
+                $result = $resultJson | ConvertFrom-Json
+                if (@($result.failures).Count -gt 0) {
+                    $reasons = @($result.failures | ForEach-Object { "$($_.imageId.imageDigest):$($_.failureCode) ($($_.failureReason))" }) -join ', '
+                    throw "Could not empty ECR repository $repository before teardown: $reasons"
+                }
             }
         }
     }
