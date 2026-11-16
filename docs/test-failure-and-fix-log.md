@@ -258,3 +258,15 @@ Both findings were test-code defects, not evidence that the Branch API runtime b
 - **Fix:** Probe the exact public `Path`; continue using `LocalPath` only for the private host-side check.
 - **Retest:** Proxy route unit tests pass; the full public/private endpoint matrix will be recorded during the ephemeral cloud run.
 - **Prevention:** Keep public gateway paths and downstream service paths separate in endpoint test fixtures; verify each public URL against both the API Gateway route and proxy rewrite table.
+
+### TF-029 — PowerShell passed ECR image IDs as malformed CLI shorthand
+
+- **Affected area:** `scripts/aws-dev.ps1` ECR teardown before Terraform destroy.
+- **Environment/commit/date:** AWS account `109573999710`, `eu-west-3`; first full ephemeral retry on 2026-11-16.
+- **Severity/status:** High for cleanup; JSON request implementation added, live retest pending.
+- **Test type:** AWS ECR integration and PowerShell argument handling.
+- **Symptom:** `batch-delete-image` returned `InvalidImageDigest`; the script stopped before Terraform could delete the repositories, leaving the state bucket intact.
+- **Cause:** PowerShell's native argument binding passed the `imageDigest=...` shorthand in an invalid shape for AWS CLI.
+- **Fix:** Build the API's `repositoryName` and `imageIds` object and pass it through `--cli-input-json` using a short-lived UTF-8 JSON file, then remove the file in `finally`.
+- **Retest:** Full ECR purge, AWS stack create/deploy/health smoke, and complete teardown will be rerun.
+- **Prevention:** For nested AWS CLI arrays/objects in PowerShell, serialize the documented API request shape to JSON instead of relying on shorthand expansion.
