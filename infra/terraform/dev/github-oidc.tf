@@ -17,7 +17,7 @@ resource "aws_iam_role" "github_actions_ecr_publish" {
       Principal = { Federated = data.aws_iam_openid_connect_provider.github.arn }
       Condition = {
         StringEquals = { "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com" }
-        StringLike   = { "token.actions.githubusercontent.com:sub" = "repo:NorthstarEngineering/RAS-Backend:environment:development-publish" }
+        StringLike   = { "token.actions.githubusercontent.com:sub" = "repo:NorthstarEngineering@341364035/RAS-Backend@1414575415:environment:development-publish" }
       }
     }]
   })
