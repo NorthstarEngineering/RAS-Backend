@@ -54,7 +54,7 @@ For a fully disposable end-to-end run, use:
 .\scripts\aws-dev.ps1 ephemeral
 ```
 
-This builds and deploys all ten APIs, writes `docs/aws-cloud-deployment-report.md`, then destroys the complete application stack including RDS and its data. It also deletes every object version and the Terraform state S3 bucket after the destroy succeeds. The next run creates a fresh encrypted, versioned, private state bucket and starts with empty Terraform state. The report remains in the repository. **Do not use `ephemeral` when database data must be retained.**
+This creates a fresh encrypted, versioned, private state bucket, provisions the stack, dispatches the main-branch GitHub Actions workflow to build and publish all ten API images, deploys them, and verifies private and public health endpoints. It writes `docs/aws-cloud-deployment-report.md`, then destroys the complete application stack including RDS and its data. It also deletes every object version and the Terraform state S3 bucket after the destroy succeeds. The next run starts from a new bucket and empty Terraform state. Set `RAS_TERRAFORM_BIN` and `RAS_TERRAFORM_DATA_DIR` to keep Terraform and its provider cache on a data drive when desired. The report remains in the repository. **Do not use `ephemeral` when database data must be retained.**
 
 For continuous GitHub deployment, run `infra-up` once from an authenticated local AWS profile. It provisions the stack and sets `AWS_ROLE_TO_ASSUME`, `AWS_REGION`, and `API_GATEWAY_BASE_URL` in the GitHub `development-publish` environment. Successful Docker stack validation runs on `main` then publish immutable images and deploy through SSM. The deployment workflow records its endpoint report as a workflow artifact.
 
@@ -107,3 +107,4 @@ The app host is managed through SSM Session Manager. The lifecycle command uses 
 The database and application passwords are stored as Standard SecureString SSM parameters. Terraform state also contains sensitive values; keep the encrypted server-side state and DPAPI laptop backup private. Back up state after a successful apply and again after destroy. Do not print secret parameter values.
 
 After endpoint checks, destroy only the application Terraform stack using a reviewed `terraform plan -destroy` and `terraform destroy`. This permanently deletes the disposable RDS database without a final snapshot. The separately bootstrapped S3 state bucket and its versioned state history must remain. Do not delete that bucket as part of application cleanup.
+
