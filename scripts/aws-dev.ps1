@@ -123,7 +123,7 @@ function Remove-DevelopmentEcrImages {
                     $otherFailures = @($failures | Where-Object failureCode -ne 'ImageReferencedByManifestList')
                     if ($otherFailures.Count -gt 0) {
                         $reasons = @($otherFailures | ForEach-Object { "$($_.imageId.imageDigest):$($_.failureCode) ($($_.failureReason))" }) -join ', '
-                        throw "Could not delete manifest indexes from ECR repository $repository: $reasons"
+                        throw "Could not delete manifest indexes from ECR repository ${repository}: $reasons"
                     }
                     if ($failures.Count -eq 0) { $deletedIndex = $true }
                 }
