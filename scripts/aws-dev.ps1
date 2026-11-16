@@ -445,7 +445,6 @@ if ($Action -eq 'up') {
     )
     $endpointResults = @()
     foreach ($check in $endpointChecks) {
-        $isGatewayHealth = $check.Name -eq 'gateway/auth'
         $uri = "$gatewayUrl$($check.Path)"
         $targetUri = "http://127.0.0.1:$($check.Port)$($check.LocalPath)"
         if (-not $isGatewayHealth) {
