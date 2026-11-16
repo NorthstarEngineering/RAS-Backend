@@ -317,7 +317,7 @@ function Invoke-GitHubDevelopmentDeploy {
         $runId = ($runs | Where-Object { $_.headSha -eq $mainSha -and [DateTime]$_.createdAt -ge $dispatchTime.AddSeconds(-10) } | Select-Object -First 1).databaseId
     } while (-not $runId -and [DateTime]::UtcNow -lt $deadline)
     if (-not $runId) { throw 'The AWS deployment workflow did not start within five minutes.' }
-    gh run watch $runId --repo NorthstarEngineering/RAS-Backend --exit-status
+    gh run watch $runId --repo NorthstarEngineering/RAS-Backend --exit-status | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "AWS build, publish, deploy, or endpoint workflow $runId failed. Inspect it with gh run view $runId." }
     return $mainSha
 }
