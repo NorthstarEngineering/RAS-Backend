@@ -578,4 +578,3 @@ else {
     Invoke-Terraform apply -input=false -auto-approve $planPath
     Write-Output 'Development infrastructure destroyed. Terraform state bucket and encrypted laptop backup remain.'
 }
-
