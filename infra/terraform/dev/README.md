@@ -107,4 +107,3 @@ The app host is managed through SSM Session Manager. The lifecycle command uses 
 The database and application passwords are stored as Standard SecureString SSM parameters. Terraform state also contains sensitive values; keep the encrypted server-side state and DPAPI laptop backup private. Back up state after a successful apply and again after destroy. Do not print secret parameter values.
 
 After endpoint checks, destroy only the application Terraform stack using a reviewed `terraform plan -destroy` and `terraform destroy`. This permanently deletes the disposable RDS database without a final snapshot. The separately bootstrapped S3 state bucket and its versioned state history must remain. Do not delete that bucket as part of application cleanup.
-
