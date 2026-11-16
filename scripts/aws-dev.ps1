@@ -105,10 +105,8 @@ function Remove-DevelopmentEcrImages {
         if ($repository -notin $existing) { continue }
         $imageJson = Invoke-Aws ecr describe-images --repository-name $repository --query 'imageDetails[].imageDigest' --output json
         $digests = @($imageJson | ConvertFrom-Json)
-        for ($offset = 0; $offset -lt $digests.Count; $offset += 100) {
-            $end = [Math]::Min($offset + 99, $digests.Count - 1)
-            $imageIds = @($digests[$offset..$end] | ForEach-Object { "imageDigest=$_" })
-            $resultJson = Invoke-Aws ecr batch-delete-image --repository-name $repository --image-ids $imageIds --output json
+        foreach ($digest in $digests) {
+            $resultJson = Invoke-Aws ecr batch-delete-image --repository-name $repository --image-ids "imageDigest=$digest" --output json
             $result = $resultJson | ConvertFrom-Json
             if (@($result.failures).Count -gt 0) {
                 $reasons = @($result.failures | ForEach-Object { "$($_.imageId.imageDigest):$($_.failureCode)" }) -join ', '
