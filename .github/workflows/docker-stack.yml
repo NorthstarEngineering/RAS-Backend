@@ -32,7 +32,7 @@ jobs:
       - name: Configure disposable smoke credentials
         run: |
           cat > .env <<'EOF'
-          APP_ENV=production
+          APP_ENV=development
           DB_NAME=restaurant_db
           DB_PORT_FORWARD=5432
           DB_MAX_OPEN_CONNS=5
@@ -70,6 +70,8 @@ jobs:
               fi
             }
           done
+      - name: Exercise stock, transfer, supply and sales on the disposable database
+        run: python3 tests/integration/feature_write_smoke.py
       - name: Capture service state on failure
         if: failure()
         run: docker compose --env-file .env -p ras-ci -f deploy/docker-compose.yml logs --no-color

@@ -390,7 +390,7 @@ func (h *Handler) receiveSupplyRequest(c *gin.Context) {
 
 	var recItems []ReceiveItemInput
 	for _, i := range req.Items {
-		recItems = append(recItems, ReceiveItemInput{ItemID: i.ItemID, ReceivedQty: i.ReceivedQty})
+		recItems = append(recItems, ReceiveItemInput{ItemID: i.ItemID, ReceivedQty: *i.ReceivedQty})
 	}
 
 	err := h.svc.ReceiveSupplyRequest(c.Request.Context(), ReceiveSupplyRequestInput{

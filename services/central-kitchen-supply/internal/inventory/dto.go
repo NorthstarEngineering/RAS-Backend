@@ -162,6 +162,6 @@ type ReceiveSupplyRequestReq struct {
 }
 
 type ReceiveItemReq struct {
-	ItemID      string  `json:"item_id" binding:"required,uuid"`
-	ReceivedQty float64 `json:"received_qty" binding:"required,gte=0"`
+	ItemID      string   `json:"item_id" binding:"required,uuid"`
+	ReceivedQty *float64 `json:"received_qty" binding:"required,gte=0"`
 }

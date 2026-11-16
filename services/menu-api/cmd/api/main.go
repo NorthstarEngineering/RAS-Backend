@@ -15,6 +15,7 @@ import (
 	_ "github.com/NorthstarEngineering/RAS-Backend/services/menu-api/docs"
 	"github.com/NorthstarEngineering/RAS-Backend/services/menu-api/internal/menu"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	swaggerFiles "github.com/swaggo/files"
@@ -66,7 +67,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "menu-api"})
 	})
 
-	api := router.Group("/api/v1")
+	api := router.Group("/api/v1", gatewayIdentity)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/swagger/doc.json")))
 	handler.RegisterRoutes(api)
 
@@ -75,4 +76,20 @@ func main() {
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+// gatewayIdentity reads authenticated identity from the private API proxy.
+func gatewayIdentity(c *gin.Context) {
+	actor, err := uuid.Parse(c.GetHeader("X-User-ID"))
+	role := c.GetHeader("X-User-Role")
+	if err != nil || actor == uuid.Nil || role == "" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": gin.H{
+			"code": "unauthorized", "message": "authenticated user context is required",
+		}})
+		return
+	}
+	c.Set("user_id", actor.String())
+	c.Set("user_role", role)
+	c.Set("branch_id", c.GetHeader("X-Branch-ID"))
+	c.Next()
 }

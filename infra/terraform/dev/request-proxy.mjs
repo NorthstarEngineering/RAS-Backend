@@ -46,8 +46,8 @@ export const handler = async (event) => {
   const targetRoute = backendTarget(path);
   if (!targetRoute) return { statusCode: 404, headers: { "content-type": "application/json" }, body: JSON.stringify({ error: "not found" }) };
 
-  const headers = { ...(event.headers || {}) };
-  for (const name of ["host", "connection", "content-length", "transfer-encoding", "accept-encoding"]) delete headers[name];
+  const headers = Object.fromEntries(Object.entries(event.headers || {}).map(([name, value]) => [name.toLowerCase(), value]));
+  for (const name of ["host", "connection", "content-length", "transfer-encoding", "accept-encoding", "x-user-id", "x-user-role", "x-branch-id"]) delete headers[name];
   const identity = event.requestContext?.authorizer?.lambda || {};
   if (identity.sub) headers["x-user-id"] = identity.sub;
   if (identity.role) headers["x-user-role"] = identity.role;

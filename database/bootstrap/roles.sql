@@ -36,49 +36,69 @@ WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'menu_app')
 \gexec
 SELECT format('ALTER ROLE menu_app WITH LOGIN PASSWORD %L', :'menu_password')
 \gexec
-ALTER ROLE menu_app NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 5;
+ALTER ROLE menu_app CONNECTION LIMIT 5;
 
 -- Inventory App (Central Kitchen)
 SELECT format('CREATE ROLE inventory_app LOGIN PASSWORD %L', :'inventory_password') WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'inventory_app')
 \gexec
 SELECT format('ALTER ROLE inventory_app WITH LOGIN PASSWORD %L', :'inventory_password')
 \gexec
-ALTER ROLE inventory_app NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 5;
+ALTER ROLE inventory_app CONNECTION LIMIT 5;
 
 -- Central Kitchen App
 SELECT format('CREATE ROLE central_kitchen_app LOGIN PASSWORD %L', :'central_kitchen_password') WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'central_kitchen_app')
 \gexec
 SELECT format('ALTER ROLE central_kitchen_app WITH LOGIN PASSWORD %L', :'central_kitchen_password')
 \gexec
-ALTER ROLE central_kitchen_app NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 5;
+ALTER ROLE central_kitchen_app CONNECTION LIMIT 5;
 
 -- Cost App
 SELECT format('CREATE ROLE cost_app LOGIN PASSWORD %L', :'cost_password') WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'cost_app')
 \gexec
 SELECT format('ALTER ROLE cost_app WITH LOGIN PASSWORD %L', :'cost_password')
 \gexec
-ALTER ROLE cost_app NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 5;
+ALTER ROLE cost_app CONNECTION LIMIT 5;
 
 -- Sales App
 SELECT format('CREATE ROLE sales_app LOGIN PASSWORD %L', :'sales_password') WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sales_app')
 \gexec
 SELECT format('ALTER ROLE sales_app WITH LOGIN PASSWORD %L', :'sales_password')
 \gexec
-ALTER ROLE sales_app NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 5;
+ALTER ROLE sales_app CONNECTION LIMIT 5;
 
 -- Transfer App
 SELECT format('CREATE ROLE transfer_app LOGIN PASSWORD %L', :'transfer_password') WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'transfer_app')
 \gexec
 SELECT format('ALTER ROLE transfer_app WITH LOGIN PASSWORD %L', :'transfer_password')
 \gexec
-ALTER ROLE transfer_app NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 5;
+ALTER ROLE transfer_app CONNECTION LIMIT 5;
 
 -- Reports App
 SELECT format('CREATE ROLE reports_app LOGIN PASSWORD %L', :'reports_password') WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'reports_app')
 \gexec
 SELECT format('ALTER ROLE reports_app WITH LOGIN PASSWORD %L', :'reports_password')
 \gexec
-ALTER ROLE reports_app NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 5;
+ALTER ROLE reports_app CONNECTION LIMIT 5;
+
+-- RDS can reject ALTER ROLE for protected attributes even when setting them
+-- to their existing values. New LOGIN roles use PostgreSQL's safe defaults.
+DO $check_service_roles$
+DECLARE
+    unsafe_roles text;
+BEGIN
+    SELECT string_agg(rolname, ', ' ORDER BY rolname)
+      INTO unsafe_roles
+      FROM pg_roles
+      WHERE rolname IN (
+        'auth_app', 'branch_app', 'attendance_app', 'menu_app', 'inventory_app',
+        'central_kitchen_app', 'cost_app', 'sales_app', 'transfer_app', 'reports_app'
+      )
+      AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls);
+    IF unsafe_roles IS NOT NULL THEN
+        RAISE EXCEPTION 'Unexpected privileged attributes on service roles: %', unsafe_roles;
+    END IF;
+END;
+$check_service_roles$;
 
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO auth_app, branch_app, attendance_app, menu_app, inventory_app, central_kitchen_app, cost_app, sales_app, transfer_app, reports_app;

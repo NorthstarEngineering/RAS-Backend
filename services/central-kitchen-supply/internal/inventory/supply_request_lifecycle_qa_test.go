@@ -398,3 +398,7 @@ func assertSupplyRequestQAAuditActor(t *testing.T, stats *supplyRequestQATxStats
 		t.Fatalf("audit actor = %q/%q, want authenticated actor %q/%q", stats.auditActorID, stats.auditActorRole, supplyRequestQAActorID, role)
 	}
 }
+
+func (*supplyRequestQALifecycleRepository) ActiveCentralKitchenID(context.Context, *sqlx.Tx) (string, error) {
+	return supplyRequestQACentralKitchenID, nil
+}

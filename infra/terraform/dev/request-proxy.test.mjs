@@ -107,3 +107,19 @@ test("hides downstream errors behind a generic 502 response", async (t) => {
   assert.deepEqual(JSON.parse(response.body), { error: "backend unavailable" });
   assert.equal(response.body.includes("private endpoint detail"), false);
 });
+test("does not forward client identity headers without verified gateway claims", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (_url, options) => {
+    for (const key of ["x-user-id", "x-user-role", "x-branch-id"]) {
+      assert.equal(options.headers[key], undefined);
+    }
+    return new Response("ok");
+  };
+  const response = await handler({
+    rawPath: "/api/v1/menu/items",
+    headers: { "X-User-ID": "unverified", "x-user-role": "CEO", "X-Branch-ID": "unverified" },
+    requestContext: { http: { method: "GET" } },
+  });
+  assert.equal(response.statusCode, 200);
+});

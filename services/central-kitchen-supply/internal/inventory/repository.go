@@ -15,6 +15,7 @@ import (
 // ============================================================
 
 type Repository interface {
+	ActiveCentralKitchenID(context.Context, *sqlx.Tx) (string, error)
 	// GetInventoryByBranchAndGood - يجيب رصيد صنف معين في فرع معين
 	GetInventoryByBranchAndGood(ctx context.Context, branchID, goodID string) (*Inventory, error)
 
@@ -106,10 +107,14 @@ func (r *postgresRepo) UpdateInventoryQuantity(ctx context.Context, tx *sqlx.Tx,
 
 func (r *postgresRepo) CreateMovement(ctx context.Context, tx *sqlx.Tx, mov *InventoryMovement) error {
 	const q = `
-		INSERT INTO inventory_movements (id, inventory_id, type, quantity, reason, created_by, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO inventory_movements (
+			id, inventory_id, branch_id, good_id, type, quantity, quantity_before,
+			quantity_after, reason, created_by, created_at
+		)
+		SELECT $1, id, branch_id, good_id, $3, $4, $8, quantity, $5, $6, $7
+		FROM inventories WHERE id = $2
 	`
-	_, err := tx.ExecContext(ctx, q, mov.ID, mov.InventoryID, mov.Type, mov.Quantity, mov.Reason, mov.CreatedBy, mov.CreatedAt)
+	_, err := tx.ExecContext(ctx, q, mov.ID, mov.InventoryID, mov.Type, mov.Quantity, mov.Reason, mov.CreatedBy, mov.CreatedAt, mov.QuantityBefore)
 	if err != nil {
 		return fmt.Errorf("create movement: %w", err)
 	}
@@ -247,3 +252,14 @@ func (r *postgresRepo) ListSupplyRequestItems(ctx context.Context, requestID str
 }
 
 var _ Repository = (*postgresRepo)(nil)
+
+func (r *postgresRepo) ActiveCentralKitchenID(ctx context.Context, tx *sqlx.Tx) (string, error) {
+	var kitchens []string
+	if err := tx.SelectContext(ctx, &kitchens, `SELECT id FROM branches WHERE type = 'central_kitchen' AND is_active ORDER BY id LIMIT 2`); err != nil {
+		return "", fmt.Errorf("find active central kitchen: %w", err)
+	}
+	if len(kitchens) != 1 {
+		return "", errors.New("invalid central kitchen configuration: exactly one active central kitchen is required")
+	}
+	return kitchens[0], nil
+}

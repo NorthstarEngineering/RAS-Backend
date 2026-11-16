@@ -44,13 +44,14 @@ func (m MovementType) IsValid() bool {
 // ============================================================
 
 type InventoryMovement struct {
-	ID          string       `db:"id" json:"id"`
-	InventoryID string       `db:"inventory_id" json:"inventory_id"`
-	Type        MovementType `db:"type" json:"type"`
-	Quantity    float64      `db:"quantity" json:"quantity"`
-	Reason      string       `db:"reason" json:"reason"`
-	CreatedBy   string       `db:"created_by" json:"created_by"`
-	CreatedAt   time.Time    `db:"created_at" json:"created_at"`
+	QuantityBefore float64      `db:"quantity_before" json:"-"`
+	ID             string       `db:"id" json:"id"`
+	InventoryID    string       `db:"inventory_id" json:"inventory_id"`
+	Type           MovementType `db:"type" json:"type"`
+	Quantity       float64      `db:"quantity" json:"quantity"`
+	Reason         string       `db:"reason" json:"reason"`
+	CreatedBy      string       `db:"created_by" json:"created_by"`
+	CreatedAt      time.Time    `db:"created_at" json:"created_at"`
 }
 
 // ============================================================

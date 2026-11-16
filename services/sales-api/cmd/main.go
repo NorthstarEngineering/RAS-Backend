@@ -1,4 +1,4 @@
- // @title           Sales API
+// @title           Sales API
 // @version         1.0
 // @description     Sales, Shifts, and Discounts API for Restaurant Branch Management.
 // @host            localhost:9006
@@ -16,6 +16,7 @@ import (
 
 	"github.com/NorthstarEngineering/RAS-Backend/services/sales-api/internal/sales"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -57,7 +58,7 @@ func main() {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// 6. API Routes
-	api := router.Group("/api/v1")
+	api := router.Group("/api/v1", gatewayIdentity)
 	handler.RegisterRoutes(api)
 
 	// 7. تشغيل السيرفر
@@ -65,4 +66,20 @@ func main() {
 	if err := router.Run(":" + defaultPort); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+// gatewayIdentity reads authenticated identity from the private API proxy.
+func gatewayIdentity(c *gin.Context) {
+	actor, err := uuid.Parse(c.GetHeader("X-User-ID"))
+	role := c.GetHeader("X-User-Role")
+	if err != nil || actor == uuid.Nil || role == "" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": gin.H{
+			"code": "unauthorized", "message": "authenticated user context is required",
+		}})
+		return
+	}
+	c.Set("user_id", actor.String())
+	c.Set("user_role", role)
+	c.Set("branch_id", c.GetHeader("X-Branch-ID"))
+	c.Next()
 }
