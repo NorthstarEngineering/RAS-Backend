@@ -270,3 +270,15 @@ Both findings were test-code defects, not evidence that the Branch API runtime b
 - **Fix:** Build the API's `repositoryName` and `imageIds` object and pass it through `--cli-input-json` using a short-lived UTF-8 JSON file, then remove the file in `finally`.
 - **Retest:** Full ECR purge, AWS stack create/deploy/health smoke, and complete teardown will be rerun.
 - **Prevention:** For nested AWS CLI arrays/objects in PowerShell, serialize the documented API request shape to JSON instead of relying on shorthand expansion.
+
+### TF-030 — ECR multi-architecture child manifests blocked deletion
+
+- **Affected area:** Development ECR image cleanup for the Auth API repository.
+- **Environment/commit/date:** AWS account `109573999710`, `eu-west-3`; second ephemeral cleanup attempt on 2026-11-16.
+- **Severity/status:** Medium; index-first purge implemented, live retest pending.
+- **Test type:** AWS ECR integration and container image lifecycle.
+- **Symptom:** The JSON batch request was valid, but ECR returned `ImageReferencedByManifestList` for a child image digest.
+- **Cause:** A multi-architecture OCI index still referenced the child architecture manifest; ECR requires deleting the index before deleting its children.
+- **Fix:** Query media types, delete OCI indexes and Docker manifest lists first, retry referenced indexes until their parent indexes are gone, then batch-delete remaining image manifests.
+- **Retest:** Full ECR purge and ephemeral create/deploy/health/destroy run pending.
+- **Prevention:** Test ECR cleanup against multi-platform images and delete manifest indexes before their referenced architecture manifests.
