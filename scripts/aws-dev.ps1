@@ -9,10 +9,15 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if (-not $env:TF_DATA_DIR -and $env:RAS_TERRAFORM_DATA_DIR) { $env:TF_DATA_DIR = [System.IO.Path]::GetFullPath($env:RAS_TERRAFORM_DATA_DIR) }
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $terraformDirectory = Join-Path $repoRoot 'infra\terraform\dev'
 $toolsDirectory = Join-Path $repoRoot '.tools\terraform'
-$terraform = Join-Path $toolsDirectory 'terraform.exe'
+$terraform = if ($env:RAS_TERRAFORM_BIN) {
+    [System.IO.Path]::GetFullPath($env:RAS_TERRAFORM_BIN)
+} else {
+    Join-Path $toolsDirectory 'terraform.exe'
+}
 if (-not (Test-Path -LiteralPath $terraform)) {
     $terraformCommand = Get-Command terraform -ErrorAction SilentlyContinue
     if (-not $terraformCommand) { throw 'Terraform is required. Install Terraform or place terraform.exe in .tools\terraform.' }
@@ -85,6 +90,31 @@ function Remove-StateBucket {
         }
     }
     $null = Invoke-Aws s3api delete-bucket --bucket $Bucket
+}
+
+function Remove-DevelopmentEcrImages {
+    $repositories = @(
+        'ras-auth-api', 'ras-branch-api', 'ras-attendance-api', 'ras-menu-api',
+        'ras-central-kitchen-api', 'ras-inventory-api', 'ras-cost-api',
+        'ras-sales-api', 'ras-transfer-api', 'ras-reports-api', 'ras-db-migrations'
+    )
+    $existingJson = Invoke-Aws ecr describe-repositories --query 'repositories[].repositoryName' --output json
+    $existing = @($existingJson | ConvertFrom-Json)
+    foreach ($repository in $repositories) {
+        if ($repository -notin $existing) { continue }
+        $imageJson = Invoke-Aws ecr describe-images --repository-name $repository --query 'imageDetails[].imageDigest' --output json
+        $digests = @($imageJson | ConvertFrom-Json)
+        for ($offset = 0; $offset -lt $digests.Count; $offset += 100) {
+            $end = [Math]::Min($offset + 99, $digests.Count - 1)
+            $imageIds = @($digests[$offset..$end] | ForEach-Object { "imageDigest=$_" })
+            $resultJson = Invoke-Aws ecr batch-delete-image --repository-name $repository --image-ids $imageIds --output json
+            $result = $resultJson | ConvertFrom-Json
+            if (@($result.failures).Count -gt 0) {
+                $reasons = @($result.failures | ForEach-Object { "$($_.imageId.imageDigest):$($_.failureCode)" }) -join ', '
+                throw "Could not empty ECR repository $repository before teardown: $reasons"
+            }
+        }
+    }
 }
 
 function Remove-OrphanedDevelopmentVpc {
@@ -270,6 +300,26 @@ function Sync-HostDeploymentHelper {
     Invoke-Ssm $InstanceId $command
 }
 
+function Invoke-GitHubDevelopmentDeploy {
+    $dispatchTime = [DateTime]::UtcNow
+    $mainSha = (gh api repos/NorthstarEngineering/RAS-Backend/branches/main --jq '.commit.sha').Trim()
+    if ($LASTEXITCODE -ne 0 -or $mainSha -notmatch '^[a-f0-9]{40}$') { throw 'Could not identify the current main commit for the deployment workflow.' }
+    $null = gh workflow run 'Deploy AWS development stack' --ref main --repo NorthstarEngineering/RAS-Backend
+    if ($LASTEXITCODE -ne 0) { throw 'Could not dispatch the main-branch AWS build, publish, and endpoint workflow.' }
+    $deadline = [DateTime]::UtcNow.AddMinutes(5)
+    $runId = $null
+    do {
+        Start-Sleep -Seconds 5
+        $runsJson = gh run list --workflow deploy-development.yml --event workflow_dispatch --branch main --repo NorthstarEngineering/RAS-Backend --limit 10 --json databaseId,status,createdAt,headSha
+        if ($LASTEXITCODE -ne 0) { throw 'Could not locate the dispatched AWS deployment workflow.' }
+        $runs = @($runsJson | ConvertFrom-Json)
+        $runId = ($runs | Where-Object { $_.headSha -eq $mainSha -and [DateTime]$_.createdAt -ge $dispatchTime.AddSeconds(-10) } | Select-Object -First 1).databaseId
+    } while (-not $runId -and [DateTime]::UtcNow -lt $deadline)
+    if (-not $runId) { throw 'The AWS deployment workflow did not start within five minutes.' }
+    gh run watch $runId --repo NorthstarEngineering/RAS-Backend --exit-status
+    if ($LASTEXITCODE -ne 0) { throw "AWS build, publish, deploy, or endpoint workflow $runId failed. Inspect it with gh run view $runId." }
+}
+
 if ($Action -in @('up', 'infra-up')) {
     $dirty = @(git -C $repoRoot status --porcelain -- services database deploy/aws-dev-deploy.sh infra/terraform)
     if ($LASTEXITCODE -ne 0) { throw 'Could not inspect Git status.' }
@@ -449,9 +499,10 @@ elseif ($Action -eq 'ephemeral') {
         Remove-StateBucket (Get-StateBucket)
         Remove-Item -LiteralPath (Join-Path $toolsDirectory 'ras-backend-dev-down.tfplan') -Force -ErrorAction SilentlyContinue
         Remove-Item -LiteralPath (Join-Path $env:LOCALAPPDATA 'RAS-Backend\terraform-state-backups\*.state.dpapi') -Force -ErrorAction SilentlyContinue
-        $upArguments = @('-Action', 'up', '-Profile', $Profile, '-Region', $Region)
-        if ($UsePublishedImages) { $upArguments += '-UsePublishedImages' }
-        & $PSCommandPath @upArguments
+        & $PSCommandPath -Action infra-up -Profile $Profile -Region $Region
+        if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "Infrastructure bootstrap exited with code $LASTEXITCODE." }
+        Invoke-GitHubDevelopmentDeploy
+        & $PSCommandPath -Action up -Profile $Profile -Region $Region -UsePublishedImages
         if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "Deployment command exited with code $LASTEXITCODE." }
         $deployOutcome = 'PASS'
     } catch {
@@ -523,6 +574,8 @@ else {
     Write-Warning 'This deletes the development RDS database and its data. The separately managed, versioned Terraform state S3 bucket is retained.'
     $confirmation = if ($AutoDestroy) { 'DELETE RAS BACKEND DEV DATA' } else { Read-Host 'Type DELETE RAS BACKEND DEV DATA to continue' }
     if ($confirmation -cne 'DELETE RAS BACKEND DEV DATA') { throw 'Teardown cancelled; no resources were destroyed.' }
+    Remove-DevelopmentEcrImages
     Invoke-Terraform apply -input=false -auto-approve $planPath
     Write-Output 'Development infrastructure destroyed. Terraform state bucket and encrypted laptop backup remain.'
 }
+
