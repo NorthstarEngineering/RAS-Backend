@@ -246,4 +246,3 @@ Both findings were test-code defects, not evidence that the Branch API runtime b
 - **Fix:** Before applying the reviewed destroy plan, enumerate image digests in each known development repository and batch-delete them, failing with the repository and ECR failure details if any remain. Fresh repositories continue to use Terraform `force_delete` as a backstop.
 - **Retest:** Pending the complete ephemeral create, endpoint-smoke, and destroy cycle.
 - **Prevention:** Keep ECR cleanup in the destroy path as well as provider configuration; validate teardown with repositories containing image layers.
-
