@@ -107,11 +107,15 @@ function Remove-DevelopmentEcrImages {
         $digests = @($imageJson | ConvertFrom-Json)
         for ($offset = 0; $offset -lt $digests.Count; $offset += 100) {
             $end = [Math]::Min($offset + 99, $digests.Count - 1)
-            $imageIds = @($digests[$offset..$end] | ForEach-Object { "imageDigest=$_" })
-            $resultJson = Invoke-Aws ecr batch-delete-image --repository-name $repository --image-ids $imageIds --output json
+            $imageIds = @($digests[$offset..$end] | ForEach-Object { @{ imageDigest = $_ } })
+            $request = @{ repositoryName = $repository; imageIds = $imageIds } | ConvertTo-Json -Depth 5 -Compress
+            $requestPath = Join-Path $env:TEMP ("ras-ecr-delete-" + [guid]::NewGuid().ToString('N') + '.json')
+            [System.IO.File]::WriteAllText($requestPath, $request, [System.Text.UTF8Encoding]::new($false))
+            try { $resultJson = Invoke-Aws ecr batch-delete-image --cli-input-json "file://$requestPath" --output json }
+            finally { Remove-Item -LiteralPath $requestPath -Force -ErrorAction SilentlyContinue }
             $result = $resultJson | ConvertFrom-Json
             if (@($result.failures).Count -gt 0) {
-                $reasons = @($result.failures | ForEach-Object { "$($_.imageId.imageDigest):$($_.failureCode)" }) -join ', '
+                $reasons = @($result.failures | ForEach-Object { "$($_.imageId.imageDigest):$($_.failureCode) ($($_.failureReason))" }) -join ', '
                 throw "Could not empty ECR repository $repository before teardown: $reasons"
             }
         }
@@ -447,7 +451,7 @@ if ($Action -eq 'up') {
     foreach ($check in $endpointChecks) {
         $uri = "$gatewayUrl$($check.Path)"
         $targetUri = "http://127.0.0.1:$($check.Port)$($check.LocalPath)"
-        if (-not $isGatewayHealth) {
+        if ($check.Name -ne 'gateway/auth') {
             try {
                 Invoke-Ssm $instanceId "curl --fail --silent --show-error --max-time 10 '$targetUri' >/dev/null"
                 $endpointResults += [pscustomobject]@{ Name = "$($check.Name)/host"; Path = $check.LocalPath; Status = 200; Result = 'PASS' }
