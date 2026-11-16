@@ -15,7 +15,6 @@ jobs:
     if: >-
       ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'))
-      && vars.AWS_ROLE_TO_ASSUME != '' && vars.AWS_REGION != '' && vars.API_GATEWAY_BASE_URL != ''
     runs-on: ubuntu-latest
     environment: development-publish
     permissions:
