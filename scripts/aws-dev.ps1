@@ -5,7 +5,8 @@ param(
     [string]$Profile = 'ras-backend-cloud',
     [string]$Region = 'eu-west-3',
     [switch]$UsePublishedImages,
-    [switch]$AutoDestroy
+    [switch]$AutoDestroy,
+    [string]$ImageTag
 )
 
 $ErrorActionPreference = 'Stop'
@@ -318,13 +319,14 @@ function Invoke-GitHubDevelopmentDeploy {
     if (-not $runId) { throw 'The AWS deployment workflow did not start within five minutes.' }
     gh run watch $runId --repo NorthstarEngineering/RAS-Backend --exit-status
     if ($LASTEXITCODE -ne 0) { throw "AWS build, publish, deploy, or endpoint workflow $runId failed. Inspect it with gh run view $runId." }
+    return $mainSha
 }
 
 if ($Action -in @('up', 'infra-up')) {
     $dirty = @(git -C $repoRoot status --porcelain -- services database deploy/aws-dev-deploy.sh infra/terraform)
     if ($LASTEXITCODE -ne 0) { throw 'Could not inspect Git status.' }
     if ($dirty.Count -gt 0) { throw 'Commit or merge backend, migration, deployment, and Terraform changes before using this repeatable deploy command.' }
-    $imageTag = (git -C $repoRoot rev-parse HEAD).Trim()
+    $imageTag = if ($ImageTag) { $ImageTag } else { (git -C $repoRoot rev-parse HEAD).Trim() }
     if ($LASTEXITCODE -ne 0 -or $imageTag -notmatch '^[a-f0-9]{40}$') { throw 'Could not determine the source commit SHA.' }
     $secretsRaw = Get-Content -Raw -LiteralPath $secretFile
     $appSecretsEncoded = [regex]::Match($secretsRaw, '(?m)^app_secret_json\s*=\s*(.+)$').Groups[1].Value.Trim()
@@ -501,8 +503,8 @@ elseif ($Action -eq 'ephemeral') {
         Remove-Item -LiteralPath (Join-Path $env:LOCALAPPDATA 'RAS-Backend\terraform-state-backups\*.state.dpapi') -Force -ErrorAction SilentlyContinue
         & $PSCommandPath -Action infra-up -Profile $Profile -Region $Region
         if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "Infrastructure bootstrap exited with code $LASTEXITCODE." }
-        Invoke-GitHubDevelopmentDeploy
-        & $PSCommandPath -Action up -Profile $Profile -Region $Region -UsePublishedImages
+        $publishedImageTag = Invoke-GitHubDevelopmentDeploy
+        & $PSCommandPath -Action up -Profile $Profile -Region $Region -UsePublishedImages -ImageTag $publishedImageTag
         if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "Deployment command exited with code $LASTEXITCODE." }
         $deployOutcome = 'PASS'
     } catch {
